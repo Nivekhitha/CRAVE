@@ -75,4 +75,3 @@ Crave uses a **freemium model** powered by RevenueCat:
 - Advanced ingredient matching
 - Mood‑based cooking suggestions
 - Cooking history insights
-

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'routes.dart';
+import 'app_theme.dart';
 
 class CraveApp extends StatelessWidget {
   const CraveApp({super.key});
@@ -8,11 +9,8 @@ class CraveApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crave',
-      theme: ThemeData(
-        useMaterial3: true,
-        primarySwatch: Colors.blue,
-      ),
-      initialRoute: AppRoutes.onboarding,
+      theme: AppTheme.lightTheme,
+      initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
