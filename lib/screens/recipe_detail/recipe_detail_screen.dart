@@ -1,12 +1,337 @@
 import 'package:flutter/material.dart';
+import '../../app/app_colors.dart';
+import '../../app/app_text_styles.dart';
 
 class RecipeDetailScreen extends StatelessWidget {
-  const RecipeDetailScreen({super.key});
+  final Map<String, dynamic>? recipeData;
+
+  const RecipeDetailScreen({super.key, this.recipeData});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Recipe Detail Screen')),
+    // Mock Data (if not passed)
+    final data = recipeData ?? {
+      'title': 'One-Pot Creamy Pesto Pasta',
+      'description': 'Perfect for busy evenings. This creamy pasta combines fresh basil pesto with a touch of heavy cream for a silky finish, all made in just one pot to save you from doing the dishes.',
+      'duration': '20 mins',
+      'difficulty': 'Easy',
+      'ingredients': [
+        {'name': 'Penne Pasta', 'amount': '500g', 'has': true},
+        {'name': 'Garlic Cloves', 'amount': '3 units', 'has': true},
+        {'name': 'Heavy Cream', 'amount': '1 cup', 'has': false},
+        {'name': 'Basil Pesto', 'amount': '1/2 cup', 'has': true},
+        {'name': 'Parmesan Cheese', 'amount': '1/4 cup', 'has': false},
+      ],
+      'isTrending': true,
+    };
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF131313), // Dark background from UI
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _CircleButton(
+                        icon: Icons.arrow_back_ios_new, 
+                        onTap: () => Navigator.pop(context)
+                      ),
+                      Text(
+                        'Recipe Detail', 
+                        style: AppTextStyles.titleLarge.copyWith(color: Colors.white)
+                      ),
+                      _CircleButton(icon: Icons.share, onTap: () {}),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        
+                        // Hero Image Card
+                        Stack(
+                          children: [
+                            Container(
+                              height: 320,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                image: const DecorationImage(
+                                  // Placeholder image
+                                  image: NetworkImage('https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            // Dark Gradient Overlay
+                            Container(
+                              height: 320,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.8),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Title & Badge content
+                            Positioned(
+                              bottom: 24,
+                              left: 24,
+                              right: 24,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (data['isTrending'])
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        'TRENDING', 
+                                        style: AppTextStyles.labelSmall.copyWith(
+                                          color: Colors.white, 
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.2,
+                                        )
+                                      ),
+                                    ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    data['title'],
+                                    style: AppTextStyles.headlineLarge.copyWith(
+                                      color: Colors.white, 
+                                      height: 1.1,
+                                      fontSize: 32,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Stats Cards
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.schedule, 
+                                label: 'TIME', 
+                                value: data['duration']
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.restaurant_menu, // Using as difficulty icon
+                                label: 'DIFFICULTY', 
+                                value: data['difficulty']
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Description
+                        Text(
+                          data['description'],
+                          style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[400], height: 1.5),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Ingredients Header
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.kitchen, size: 20, color: Colors.white),
+                            ),
+                            const SizedBox(width: 12),
+                            Text('Ingredients You Have', style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Ingredients List
+                        ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: (data['ingredients'] as List).length,
+                          itemBuilder: (context, index) {
+                            final item = data['ingredients'][index];
+                            return _IngredientTile(item: item);
+                          },
+                        ),
+                        
+                        // Bottom Padding for FAB
+                        const SizedBox(height: 100),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Floating Cook Button
+          Positioned(
+            bottom: 32,
+            left: 24,
+            right: 24,
+            child: SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cooking Started!')));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.soup_kitchen, size: 24),
+                    const SizedBox(width: 12),
+                    Text('Cook Today', style: AppTextStyles.titleMedium.copyWith(color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _StatCard({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, letterSpacing: 1.1)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value, style: AppTextStyles.titleLarge.copyWith(color: Colors.white)),
+        ],
+      ),
+    );
+  }
+}
+
+class _IngredientTile extends StatelessWidget {
+  final Map<String, dynamic> item;
+
+  const _IngredientTile({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasItem = item['has'] ?? false;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: hasItem ? AppColors.primary : Colors.transparent,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: hasItem ? AppColors.primary : Colors.grey,
+                width: 2,
+              ),
+            ),
+            child: hasItem ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              item['name'],
+              style: AppTextStyles.bodyLarge.copyWith(color: Colors.grey[200]),
+            ),
+          ),
+          Text(
+            item['amount'],
+             style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
+          ),
+        ],
+      ),
     );
   }
 }
