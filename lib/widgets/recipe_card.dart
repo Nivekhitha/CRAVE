@@ -39,9 +39,9 @@ class RecipeCard extends StatelessWidget {
                 child: Container(
                   color: Colors.grey[300],
                   width: double.infinity,
-                  child: recipe.imageUrl.isNotEmpty
+                  child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
                       ? Image.network(
-                          recipe.imageUrl,
+                          recipe.imageUrl!,
                           fit: BoxFit.cover,
                           errorBuilder: (ctx, _, __) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
                         )
@@ -56,7 +56,7 @@ class RecipeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    recipe.category.toUpperCase(),
+                    (recipe.tags?.isNotEmpty ?? false) ? recipe.tags!.first.toUpperCase() : 'RECIPE',
                     style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontSize: 10),
                   ),
                   const SizedBox(height: 4),
@@ -71,11 +71,14 @@ class RecipeCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.timer, size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text('${recipe.durationMinutes} min', style: AppTextStyles.bodySmall),
+                      Text('${recipe.totalTime ?? 0} min', style: AppTextStyles.bodySmall),
                       const Spacer(),
-                      const Icon(Icons.star, size: 14, color: Colors.amber),
-                      const SizedBox(width: 4),
-                      Text(recipe.rating.toString(), style: AppTextStyles.bodySmall),
+                      // Rating removed as it is not in the model
+                      if (recipe.isPremium) ...[
+                         const Icon(Icons.lock, size: 14, color: Colors.amber),
+                         const SizedBox(width: 4),
+                         Text('Premium', style: AppTextStyles.bodySmall.copyWith(color: Colors.amber)),
+                      ]
                     ],
                   ),
                 ],

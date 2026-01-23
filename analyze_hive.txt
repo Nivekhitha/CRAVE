@@ -1,0 +1,148 @@
+Analyzing crave...                                              
+
+   info - The imported package 'google_fonts' isn't a dependency of the importing package - lib\app\app_text_styles.dart:2:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:google_fonts/google_fonts.dart' - lib\app\app_text_styles.dart:2:8 - uri_does_not_exist
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:7:40 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:13:41 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:19:40 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:25:41 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:31:42 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:37:41 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:43:38 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:49:39 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:55:38 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:62:37 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:68:38 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:74:37 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:80:38 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:86:39 - undefined_identifier
+  error - Undefined name 'GoogleFonts' - lib\app\app_text_styles.dart:92:38 - undefined_identifier
+   info - Don't invoke 'print' in production code - lib\main.dart:59:3 - avoid_print
+   info - Don't invoke 'print' in production code - lib\main.dart:60:3 - avoid_print
+   info - Don't invoke 'print' in production code - lib\main.dart:64:3 - avoid_print
+   info - Don't invoke 'print' in production code - lib\main.dart:66:5 - avoid_print
+warning - Unused import: 'package:hive_flutter/hive_flutter.dart' - lib\providers\user_provider.dart:2:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\add_recipe\add_recipe_options_screen.dart:105:43 - deprecated_member_use
+   info - Statements in a for should be enclosed in a block - lib\screens\add_recipe\add_recipe_screen.dart:69:43 - curly_braces_in_flow_control_structures
+   info - Statements in a for should be enclosed in a block - lib\screens\add_recipe\add_recipe_screen.dart:70:37 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\add_recipe\add_recipe_screen.dart:160:78 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\add_recipe\add_recipe_screen.dart:282:35 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\add_recipe\cookbook_results_screen.dart:92:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:45:65 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:52:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:74:82 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:114:49 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\cooking_journey\cooking_journey_screen.dart:171:13 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\cooking_journey\cooking_journey_screen.dart:173:25 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\screens\cooking_journey\cooking_journey_screen.dart:174:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\cooking_journey\cooking_journey_screen.dart:175:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\cooking_journey\cooking_journey_screen.dart:176:17 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:209:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:217:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:230:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:253:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:261:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:295:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\cooking_journey\cooking_journey_screen.dart:296:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\emotional_cooking\emotional_cooking_screen.dart:116:61 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\emotional_cooking\emotional_cooking_screen.dart:122:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\emotional_cooking\emotional_cooking_screen.dart:149:62 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\emotional_cooking\emotional_cooking_screen.dart:171:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\emotional_cooking\emotional_cooking_screen.dart:171:49 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\emotional_cooking\emotional_cooking_screen.dart:194:42 - prefer_const_literals_to_create_immutables
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\emotional_cooking\emotional_cooking_screen.dart:195:29 - prefer_const_literals_to_create_immutables
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\emotional_cooking\emotional_cooking_screen.dart:196:29 - prefer_const_literals_to_create_immutables
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\emotional_cooking\emotional_cooking_screen.dart:199:36 - prefer_const_literals_to_create_immutables
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\emotional_cooking\emotional_cooking_screen.dart:210:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\emotional_cooking\emotional_cooking_screen.dart:241:62 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\grocery\grocery_screen.dart:36:19 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\grocery\grocery_screen.dart:312:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:134:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:292:39 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\home_screen.dart:298:21 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\home\home_screen.dart:299:26 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\home_screen.dart:300:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\home_screen.dart:302:18 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:337:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\home\home_screen.dart:356:61 - deprecated_member_use
+  error - The named parameter 'ingredients' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:15:7 - missing_required_argument
+  error - The named parameter 'source' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:15:7 - missing_required_argument
+  error - The named parameter 'category' isn't defined - lib\screens\match\match_screen.dart:15:47 - undefined_named_parameter
+  error - The named parameter 'durationMinutes' isn't defined - lib\screens\match\match_screen.dart:15:84 - undefined_named_parameter
+  error - The named parameter 'difficulty' isn't defined - lib\screens\match\match_screen.dart:15:105 - undefined_named_parameter
+  error - The named parameter 'calories' isn't defined - lib\screens\match\match_screen.dart:15:125 - undefined_named_parameter
+  error - The named parameter 'rating' isn't defined - lib\screens\match\match_screen.dart:15:140 - undefined_named_parameter
+  error - The named parameter 'ingredients' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:16:7 - missing_required_argument
+  error - The named parameter 'source' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:16:7 - missing_required_argument
+  error - The named parameter 'category' isn't defined - lib\screens\match\match_screen.dart:16:49 - undefined_named_parameter
+  error - The named parameter 'durationMinutes' isn't defined - lib\screens\match\match_screen.dart:16:82 - undefined_named_parameter
+  error - The named parameter 'difficulty' isn't defined - lib\screens\match\match_screen.dart:16:103 - undefined_named_parameter
+  error - The named parameter 'calories' isn't defined - lib\screens\match\match_screen.dart:16:125 - undefined_named_parameter
+  error - The named parameter 'rating' isn't defined - lib\screens\match\match_screen.dart:16:140 - undefined_named_parameter
+  error - The named parameter 'ingredients' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:17:7 - missing_required_argument
+  error - The named parameter 'source' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:17:7 - missing_required_argument
+  error - The named parameter 'category' isn't defined - lib\screens\match\match_screen.dart:17:49 - undefined_named_parameter
+  error - The named parameter 'durationMinutes' isn't defined - lib\screens\match\match_screen.dart:17:83 - undefined_named_parameter
+  error - The named parameter 'difficulty' isn't defined - lib\screens\match\match_screen.dart:17:104 - undefined_named_parameter
+  error - The named parameter 'calories' isn't defined - lib\screens\match\match_screen.dart:17:126 - undefined_named_parameter
+  error - The named parameter 'rating' isn't defined - lib\screens\match\match_screen.dart:17:141 - undefined_named_parameter
+  error - The named parameter 'ingredients' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:18:7 - missing_required_argument
+  error - The named parameter 'source' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:18:7 - missing_required_argument
+  error - The named parameter 'category' isn't defined - lib\screens\match\match_screen.dart:18:48 - undefined_named_parameter
+  error - The named parameter 'durationMinutes' isn't defined - lib\screens\match\match_screen.dart:18:85 - undefined_named_parameter
+  error - The named parameter 'difficulty' isn't defined - lib\screens\match\match_screen.dart:18:105 - undefined_named_parameter
+  error - The named parameter 'calories' isn't defined - lib\screens\match\match_screen.dart:18:125 - undefined_named_parameter
+  error - The named parameter 'rating' isn't defined - lib\screens\match\match_screen.dart:18:140 - undefined_named_parameter
+  error - The named parameter 'ingredients' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:19:7 - missing_required_argument
+  error - The named parameter 'source' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:19:7 - missing_required_argument
+  error - The named parameter 'category' isn't defined - lib\screens\match\match_screen.dart:19:46 - undefined_named_parameter
+  error - The named parameter 'durationMinutes' isn't defined - lib\screens\match\match_screen.dart:19:79 - undefined_named_parameter
+  error - The named parameter 'difficulty' isn't defined - lib\screens\match\match_screen.dart:19:100 - undefined_named_parameter
+  error - The named parameter 'calories' isn't defined - lib\screens\match\match_screen.dart:19:120 - undefined_named_parameter
+  error - The named parameter 'rating' isn't defined - lib\screens\match\match_screen.dart:19:135 - undefined_named_parameter
+  error - The named parameter 'ingredients' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:20:7 - missing_required_argument
+  error - The named parameter 'source' is required, but there's no corresponding argument - lib\screens\match\match_screen.dart:20:7 - missing_required_argument
+  error - The named parameter 'category' isn't defined - lib\screens\match\match_screen.dart:20:49 - undefined_named_parameter
+  error - The named parameter 'durationMinutes' isn't defined - lib\screens\match\match_screen.dart:20:83 - undefined_named_parameter
+  error - The named parameter 'difficulty' isn't defined - lib\screens\match\match_screen.dart:20:104 - undefined_named_parameter
+  error - The named parameter 'calories' isn't defined - lib\screens\match\match_screen.dart:20:124 - undefined_named_parameter
+  error - The named parameter 'rating' isn't defined - lib\screens\match\match_screen.dart:20:139 - undefined_named_parameter
+   info - The private field _showAddButton could be 'final' - lib\screens\pantry\pantry_screen.dart:20:8 - prefer_final_fields
+warning - The value of the field '_showAddButton' isn't used - lib\screens\pantry\pantry_screen.dart:20:8 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\pantry\pantry_screen.dart:202:135 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile\profile_screen.dart:93:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile\profile_screen.dart:103:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe\add_recipe_screen.dart:85:82 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe_detail\recipe_detail_screen.dart:93:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe_detail\recipe_detail_screen.dart:110:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe_detail\recipe_detail_screen.dart:261:97 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe_detail\recipe_detail_screen.dart:276:90 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe_detail\recipe_detail_screen.dart:326:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe_detail\recipe_detail_screen.dart:363:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\recipe_detail\recipe_detail_screen.dart:391:35 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:39:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:51:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:77:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:83:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:94:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:106:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:147:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:153:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:161:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:175:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:187:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:210:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:217:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:223:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:232:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:238:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:246:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:261:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\hive_service.dart:291:5 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\recipe_card.dart:26:35 - deprecated_member_use
+  error - The property 'isNotEmpty' can't be unconditionally accessed because the receiver can be 'null' - lib\widgets\recipe_card.dart:42:42 - unchecked_use_of_nullable_value
+  error - The argument type 'String?' can't be assigned to the parameter type 'String'.  - lib\widgets\recipe_card.dart:44:27 - argument_type_not_assignable
+  error - The getter 'category' isn't defined for the type 'Recipe' - lib\widgets\recipe_card.dart:59:28 - undefined_getter
+  error - The getter 'durationMinutes' isn't defined for the type 'Recipe' - lib\widgets\recipe_card.dart:74:38 - undefined_getter
+  error - The getter 'rating' isn't defined for the type 'Recipe' - lib\widgets\recipe_card.dart:78:35 - undefined_getter
+

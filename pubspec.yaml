@@ -9,17 +9,37 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.2
-  purchases_flutter: ^6.0.0 # RevenueCat
-  google_fonts: ^7.1.0
-  provider: ^6.1.5+1
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # Local Database (PRIMARY STORAGE)
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  
+  # Firebase (Only for Auth)
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  
+  # RevenueCat (MANDATORY)
+  purchases_flutter: ^6.15.0
+  
+  # Utilities
+  uuid: ^4.3.3
+  intl: ^0.18.1
+  
+  # UI
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.0
+  
+  # Hive Code Generation
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.6
 
 flutter:
   uses-material-design: true

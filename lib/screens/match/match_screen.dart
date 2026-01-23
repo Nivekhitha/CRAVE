@@ -11,13 +11,62 @@ class MatchScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Mock Data
+    // Mock Data
     final List<Recipe> recipes = [
-      Recipe(id: '1', title: 'Avocado Toast', category: 'Breakfast', imageUrl: '', durationMinutes: 10, difficulty: 'Easy', calories: 250, rating: 4.8),
-      Recipe(id: '2', title: 'Grilled Chicken', category: 'Lunch', imageUrl: '', durationMinutes: 30, difficulty: 'Medium', calories: 450, rating: 4.5),
-      Recipe(id: '3', title: 'Pasta Carbonara', category: 'Dinner', imageUrl: '', durationMinutes: 20, difficulty: 'Medium', calories: 600, rating: 4.7),
-      Recipe(id: '4', title: 'Berry Smoothie', category: 'Breakfast', imageUrl: '', durationMinutes: 5, difficulty: 'Easy', calories: 180, rating: 4.9),
-      Recipe(id: '5', title: 'Caesar Salad', category: 'Lunch', imageUrl: '', durationMinutes: 15, difficulty: 'Easy', calories: 300, rating: 4.6),
-      Recipe(id: '6', title: 'Steak & Veggies', category: 'Dinner', imageUrl: '', durationMinutes: 45, difficulty: 'Hard', calories: 700, rating: 4.8),
+      Recipe(
+        id: '1', 
+        title: 'Avocado Toast', 
+        tags: ['Breakfast', 'Easy'],
+        imageUrl: '', 
+        prepTime: 10,
+        source: 'manual',
+        ingredients: ['Avocado', 'Bread', 'Salt', 'Pepper']
+      ),
+      Recipe(
+        id: '2', 
+        title: 'Grilled Chicken', 
+        tags: ['Lunch', 'Medium'],
+        imageUrl: '', 
+        prepTime: 30,
+        source: 'manual',
+        ingredients: ['Chicken Breast', 'Spices']
+      ),
+      Recipe(
+        id: '3', 
+        title: 'Pasta Carbonara', 
+        tags: ['Dinner', 'Medium'],
+        imageUrl: '', 
+        prepTime: 20, 
+        source: 'manual',
+        ingredients: ['Pasta', 'Eggs', 'Cheese']
+      ),
+      Recipe(
+        id: '4', 
+        title: 'Berry Smoothie', 
+        tags: ['Breakfast', 'Easy'],
+        imageUrl: '', 
+        prepTime: 5, 
+        source: 'manual',
+        ingredients: ['Berries', 'Yogurt', 'Milk']
+      ),
+      Recipe(
+        id: '5', 
+        title: 'Caesar Salad', 
+        tags: ['Lunch', 'Easy'],
+        imageUrl: '', 
+        prepTime: 15,
+        source: 'manual',
+        ingredients: ['Romaine', 'Croutons', 'Dressing']
+      ),
+      Recipe(
+        id: '6', 
+        title: 'Steak & Veggies', 
+        tags: ['Dinner', 'Hard'],
+        imageUrl: '', 
+        prepTime: 45, 
+        source: 'manual',
+        ingredients: ['Steak', 'Broccoli', 'Carrots']
+      ),
     ];
 
     return Scaffold(
