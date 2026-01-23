@@ -6,7 +6,8 @@ import '../match/match_screen.dart';
 import '../pantry/pantry_screen.dart';
 import '../profile/profile_screen.dart';
 import '../add_recipe/add_recipe_options_screen.dart';
-
+import '../emotional_cooking/emotional_cooking_screen.dart';
+import '../cooking_journey/cooking_journey_screen.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,6 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
     const GroceryScreen(), // Replaced Pantry with Grocery for Bottom Nav
     const ProfileScreen(),
   ];
+  
+
 
   void _onTabTapped(int index) {
     if (index == 2) {
@@ -73,6 +76,13 @@ class _HomeScreenState extends State<HomeScreen> {
 class _HomeView extends StatelessWidget {
   const _HomeView();
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning ☀️';
+    if (hour < 17) return 'Good Afternoon 🌤️';
+    return 'Good Evening 🌙';
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -94,7 +104,7 @@ class _HomeView extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Hi, User 👋', style: AppTextStyles.titleLarge),
+                      Text(_getGreeting(), style: AppTextStyles.titleLarge),
                       Text('Ready to cook something?', style: AppTextStyles.bodySmall),
                     ],
                   ),
@@ -106,8 +116,10 @@ class _HomeView extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ],
-          ),
+          ), 
           const SizedBox(height: 32),
+
+
 
           // Today's Suggestion
           Text('Today\'s Suggestion', style: AppTextStyles.titleMedium),
@@ -209,6 +221,28 @@ class _HomeView extends StatelessWidget {
           Text('Quick Actions', style: AppTextStyles.titleMedium),
           const SizedBox(height: 12),
           _QuickActionCard(
+            icon: Icons.mood,
+            title: 'Emotional Foodie',
+            subtitle: 'Cook based on your mood',
+            color: Colors.purple.shade50,
+            iconColor: Colors.purple,
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const EmotionalCookingScreen()));
+            },
+          ),
+          const SizedBox(height: 12),
+           _QuickActionCard(
+            icon: Icons.emoji_events,
+            title: 'Your Journey',
+            subtitle: 'Track streaks & stats',
+            color: Colors.orange.shade50,
+            iconColor: Colors.orange,
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const CookingJourneyScreen()));
+            },
+          ),
+          const SizedBox(height: 12),
+          _QuickActionCard(
             icon: Icons.kitchen,
             title: 'Add Fridge Items',
             subtitle: 'Update your current stock',
@@ -281,6 +315,7 @@ class _QuickActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
+  final Color? iconColor; // New optional parameter
   final VoidCallback onTap;
 
   const _QuickActionCard({
@@ -289,6 +324,7 @@ class _QuickActionCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.onTap,
+    this.iconColor,
   });
 
   @override
@@ -317,10 +353,10 @@ class _QuickActionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: (iconColor ?? AppColors.primary).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: AppColors.primary),
+                  child: Icon(icon, color: iconColor ?? AppColors.primary),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

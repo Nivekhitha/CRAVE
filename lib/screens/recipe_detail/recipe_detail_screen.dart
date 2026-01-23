@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../providers/user_provider.dart';
 
-class RecipeDetailScreen extends StatelessWidget {
+class RecipeDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? recipeData;
 
   const RecipeDetailScreen({super.key, this.recipeData});
 
   @override
+  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+}
+
+class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  final Set<int> _completedSteps = {};
+
+  @override
   Widget build(BuildContext context) {
     // Mock Data (if not passed)
-    final data = recipeData ?? {
+    final data = widget.recipeData ?? {
       'title': 'One-Pot Creamy Pesto Pasta',
       'description': 'Perfect for busy evenings. This creamy pasta combines fresh basil pesto with a touch of heavy cream for a silky finish, all made in just one pot to save you from doing the dishes.',
       'duration': '20 mins',
@@ -23,10 +32,17 @@ class RecipeDetailScreen extends StatelessWidget {
         {'name': 'Parmesan Cheese', 'amount': '1/4 cup', 'has': false},
       ],
       'isTrending': true,
+      'steps': [
+        'Boil water in a large pot. Add salt and pasta. Cook until al dente.',
+        'Reserve 1/2 cup of pasta water. Drain the rest.',
+        'In the same pot (or a pan), add the pesto and heavy cream. Simmer for 1-2 mins.',
+        'Toss the pasta in the sauce. Add pasta water if too thick.',
+        'Serve hot with parmesan cheese.'
+      ],
     };
 
     return Scaffold(
-      backgroundColor: const Color(0xFF131313), // Dark background from UI
+      backgroundColor: AppColors.background, // Light Theme!
       body: Stack(
         children: [
           SafeArea(
@@ -44,7 +60,7 @@ class RecipeDetailScreen extends StatelessWidget {
                       ),
                       Text(
                         'Recipe Detail', 
-                        style: AppTextStyles.titleLarge.copyWith(color: Colors.white)
+                        style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary)
                       ),
                       _CircleButton(icon: Icons.share, onTap: () {}),
                     ],
@@ -72,9 +88,16 @@ class RecipeDetailScreen extends StatelessWidget {
                                   image: NetworkImage('https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'),
                                   fit: BoxFit.cover,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
                               ),
                             ),
-                            // Dark Gradient Overlay
+                            // Dark Gradient Overlay (Keep dark for text visibility on image)
                             Container(
                               height: 320,
                               decoration: BoxDecoration(
@@ -84,7 +107,7 @@ class RecipeDetailScreen extends StatelessWidget {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.black.withOpacity(0.8),
+                                    Colors.black.withOpacity(0.7),
                                   ],
                                 ),
                               ),
@@ -154,7 +177,7 @@ class RecipeDetailScreen extends StatelessWidget {
                         // Description
                         Text(
                           data['description'],
-                          style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[400], height: 1.5),
+                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
                         ),
                         const SizedBox(height: 32),
 
@@ -170,7 +193,7 @@ class RecipeDetailScreen extends StatelessWidget {
                               child: const Icon(Icons.kitchen, size: 20, color: Colors.white),
                             ),
                             const SizedBox(width: 12),
-                            Text('Ingredients You Have', style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
+                            Text('Ingredients You Have', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -186,6 +209,84 @@ class RecipeDetailScreen extends StatelessWidget {
                           },
                         ),
                         
+                        const SizedBox(height: 32),
+
+                        // Instructions Header
+                         Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.menu_book, size: 20, color: Colors.white),
+                            ),
+                            const SizedBox(width: 12),
+                            Text('Preparation', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Instructions List
+                        if (data['steps'] != null)
+                          ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: (data['steps'] as List).length,
+                            itemBuilder: (context, index) {
+                              final step = data['steps'][index];
+                              final isCompleted = _completedSteps.contains(index);
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (isCompleted) {
+                                      _completedSteps.remove(index);
+                                    } else {
+                                      _completedSteps.add(index);
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 24),
+                                  color: Colors.transparent, // Hit test
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 28,
+                                        height: 28,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: isCompleted ? Colors.green : AppColors.primary.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: isCompleted 
+                                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                                          : Text(
+                                              '${index + 1}',
+                                              style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
+                                            ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          step,
+                                          style: AppTextStyles.bodyLarge.copyWith(
+                                            color: isCompleted ? AppColors.textSecondary.withOpacity(0.5) : AppColors.textPrimary,
+                                            height: 1.5,
+                                            decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                            decorationColor: AppColors.textSecondary
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        
                         // Bottom Padding for FAB
                         const SizedBox(height: 100),
                       ],
@@ -196,6 +297,7 @@ class RecipeDetailScreen extends StatelessWidget {
             ),
           ),
           
+
           // Floating Cook Button
           Positioned(
             bottom: 32,
@@ -205,13 +307,23 @@ class RecipeDetailScreen extends StatelessWidget {
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cooking Started!')));
+                   // Update Logic
+                   Provider.of<UserProvider>(context, listen: false).completeCooking();
+                   
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     const SnackBar(
+                       content: Text('Cooking Completed! Streak Updated 🔥'),
+                       backgroundColor: AppColors.primary,
+                       behavior: SnackBarBehavior.floating,
+                     )
+                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 4,
+                  shadowColor: AppColors.primary.withOpacity(0.4),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -244,10 +356,17 @@ class _CircleButton extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: AppColors.surface, // Light background
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
+        child: Icon(icon, color: AppColors.textPrimary, size: 20),
       ),
     );
   }
@@ -265,9 +384,15 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +405,7 @@ class _StatCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(value, style: AppTextStyles.titleLarge.copyWith(color: Colors.white)),
+          Text(value, style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary)),
         ],
       ),
     );
@@ -300,9 +425,9 @@ class _IngredientTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
@@ -313,7 +438,7 @@ class _IngredientTile extends StatelessWidget {
               color: hasItem ? AppColors.primary : Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
-                color: hasItem ? AppColors.primary : Colors.grey,
+                color: hasItem ? AppColors.primary : Colors.grey.shade400,
                 width: 2,
               ),
             ),
@@ -323,12 +448,12 @@ class _IngredientTile extends StatelessWidget {
           Expanded(
             child: Text(
               item['name'],
-              style: AppTextStyles.bodyLarge.copyWith(color: Colors.grey[200]),
+              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
             ),
           ),
           Text(
             item['amount'],
-             style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
+             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
