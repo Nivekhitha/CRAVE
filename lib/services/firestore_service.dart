@@ -110,6 +110,14 @@ class FirestoreService {
         .snapshots();
   }
 
+  // --- Public / Global Recipes ---
+  Stream<QuerySnapshot> getPublicRecipesStream() {
+    return _db.collection('recipes')
+        // .where('isPublic', isEqualTo: true) // optional: if we have a flag
+        .limit(50) // Limit for MVP performance
+        .snapshots();
+  }
+
   Future<void> saveRecipe(Map<String, dynamic> recipeData) async {
      await _perform(() async {
       String id = recipeData['id'] ?? _userDoc().collection('recipes').doc().id;

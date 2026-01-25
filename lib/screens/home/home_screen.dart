@@ -8,6 +8,8 @@ import '../profile/profile_screen.dart';
 import '../add_recipe/add_recipe_options_screen.dart';
 import '../emotional_cooking/emotional_cooking_screen.dart';
 import '../cooking_journey/cooking_journey_screen.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -85,226 +87,308 @@ class _HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        final matches = userProvider.recipeMatches;
+        // Top match or empty
+        final topMatch = matches.isNotEmpty ? matches.first : null;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const CircleAvatar(
-                    backgroundImage: NetworkImage('https://i.pravatar.cc/100'), // Placeholder
-                    radius: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(_getGreeting(), style: AppTextStyles.titleLarge),
-                      Text('Ready to cook something?', style: AppTextStyles.bodySmall),
-                    ],
-                  ),
-                ],
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.notifications_none),
-                color: AppColors.textPrimary,
-              ),
-            ],
-          ), 
-          const SizedBox(height: 32),
-
-
-
-          // Today's Suggestion
-          Text('Today\'s Suggestion', style: AppTextStyles.titleMedium),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      child: Container(
-                        height: 180,
-                        color: Colors.grey[300], // Image placeholder light
-                        child: Center(child: Icon(Icons.fastfood, color: Colors.grey[500], size: 50)),
+                      const CircleAvatar(
+                        backgroundImage: NetworkImage('https://i.pravatar.cc/100'), // Placeholder
+                        radius: 20,
                       ),
-                    ),
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '90% Match with your fridge',
-                          style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'What can I cook today?',
-                        style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
-                      ),
-                      Text(
-                        'Creamy Pesto Pasta',
-                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.timer, color: Colors.grey, size: 16),
-                              const SizedBox(width: 4),
-                              Text('15 min', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
-                              const SizedBox(width: 12),
-                              const Icon(Icons.bolt, color: Colors.grey, size: 16),
-                              const SizedBox(width: 4),
-                              Text('Easy', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
-                            ],
-                          ),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const RecipeDetailScreen()));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.onPrimary,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              child: Text('View Recipe', style: AppTextStyles.labelMedium.copyWith(color: Colors.white)),
-                            ),
+                          Text(_getGreeting(), style: AppTextStyles.titleLarge),
+                          Text('Ready to cook something?', style: AppTextStyles.bodySmall),
                         ],
                       ),
                     ],
                   ),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.notifications_none),
+                    color: AppColors.textPrimary,
+                  ),
+                ],
+              ), 
+              const SizedBox(height: 32),
+
+              // Today's Suggestion (Dynamic)
+              Text('Today\'s Suggestion', style: AppTextStyles.titleMedium),
+              const SizedBox(height: 12),
+              
+              if (topMatch != null)
+                _RecipeSuggestionCard(match: topMatch)
+              else
+                _EmptyFridgeCard(onTap: () {
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen()));
+                }),
+                
+              const SizedBox(height: 32),
+              const SizedBox(height: 32),
+
+              // Quick Actions
+              Text('Quick Actions', style: AppTextStyles.titleMedium),
+              const SizedBox(height: 12),
+              _QuickActionCard(
+                icon: Icons.mood,
+                title: 'Emotional Foodie',
+                subtitle: 'Cook based on your mood',
+                color: Colors.purple.shade50,
+                iconColor: Colors.purple,
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const EmotionalCookingScreen()));
+                },
+              ),
+              const SizedBox(height: 12),
+               _QuickActionCard(
+                icon: Icons.emoji_events,
+                title: 'Your Journey',
+                subtitle: 'Track streaks & stats',
+                color: Colors.orange.shade50,
+                iconColor: Colors.orange,
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CookingJourneyScreen()));
+                },
+              ),
+              const SizedBox(height: 12),
+              _QuickActionCard(
+                icon: Icons.kitchen,
+                title: 'Add Fridge Items',
+                subtitle: 'Update your current stock',
+                color: AppColors.surface,
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen()));
+                },
+              ),
+              const SizedBox(height: 12),
+              _QuickActionCard(
+                icon: Icons.menu_book,
+                title: 'Add Recipe',
+                subtitle: 'Save a new meal idea',
+                color: AppColors.surface,
+                onTap: () {
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecipeOptionsScreen()));
+                },
+              ),
+              const SizedBox(height: 12),
+              _QuickActionCard(
+                icon: Icons.shopping_cart,
+                title: 'Grocery List',
+                subtitle: 'Items you need for recipes',
+                color: AppColors.surface,
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const GroceryScreen()));
+                },
+              ),
+              const SizedBox(height: 32),
+
+              // Recent Activity
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Recent Activity', style: AppTextStyles.titleMedium),
+                  Text('See All', style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                 padding: const EdgeInsets.all(16),
+                 decoration: BoxDecoration(
+                   color: AppColors.surface,
+                   borderRadius: BorderRadius.circular(16),
+                   boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                 ),
+                 child: Column(
+                   children: [
+                     _ActivityItem(text: 'Cooked Spicy Ramen yesterday', color: AppColors.primary),
+                     const SizedBox(height: 12),
+                     _ActivityItem(text: 'Milk expires in 2 days', color: Colors.orange),
+                   ],
+                 ),
+              ),
+              const SizedBox(height: 80), // Bottom padding for nav bar
+            ],
+          ),
+        );
+      }
+    );
+  }
+}
+
+
+
+// Helper Widgets for Home
+class _RecipeSuggestionCard extends StatelessWidget {
+  final dynamic match; // RecipeMatch object (dynamic to avoid import cycle if needed, but better to import)
+  
+  const _RecipeSuggestionCard({required this.match});
+
+  @override
+  Widget build(BuildContext context) {
+    final recipe = match.recipe;
+    final percentage = match.matchPercentage.round();
+    
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: Container(
+                  height: 180,
+                  width: double.infinity,
+                  color: Colors.grey[300], 
+                  // In real app, use Image.network(recipe.imageUrl)
+                  child: recipe.imageUrl != null 
+                    ? Image.network(recipe.imageUrl!, fit: BoxFit.cover, errorBuilder: (_,__,___) => const Center(child: Icon(Icons.fastfood, color: Colors.grey)))
+                    : Center(child: Icon(Icons.fastfood, color: Colors.grey[500], size: 50)),
+                ),
+              ),
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getMatchColor(percentage),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$percentage% Match with your fridge',
+                    style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'What can I cook today?',
+                  style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
+                ),
+                Text(
+                  recipe.title,
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.timer, color: Colors.grey, size: 16),
+                        const SizedBox(width: 4),
+                        Text('${recipe.cookTime} m', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.bolt, color: Colors.grey, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Easy', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
+                      ],
+                    ),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Pass recipe to detail screen
+                           Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: recipe)));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                        child: Text('View Recipe', style: AppTextStyles.labelMedium.copyWith(color: Colors.white)),
+                      ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 32),
-
-          // Quick Actions
-          Text('Quick Actions', style: AppTextStyles.titleMedium),
-          const SizedBox(height: 12),
-          _QuickActionCard(
-            icon: Icons.mood,
-            title: 'Emotional Foodie',
-            subtitle: 'Cook based on your mood',
-            color: Colors.purple.shade50,
-            iconColor: Colors.purple,
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const EmotionalCookingScreen()));
-            },
-          ),
-          const SizedBox(height: 12),
-           _QuickActionCard(
-            icon: Icons.emoji_events,
-            title: 'Your Journey',
-            subtitle: 'Track streaks & stats',
-            color: Colors.orange.shade50,
-            iconColor: Colors.orange,
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const CookingJourneyScreen()));
-            },
-          ),
-          const SizedBox(height: 12),
-          _QuickActionCard(
-            icon: Icons.kitchen,
-            title: 'Add Fridge Items',
-            subtitle: 'Update your current stock',
-            color: AppColors.surface,
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen()));
-            },
-          ),
-          const SizedBox(height: 12),
-          _QuickActionCard(
-            icon: Icons.menu_book,
-            title: 'Add Recipe',
-            subtitle: 'Save a new meal idea',
-            color: AppColors.surface,
-            onTap: () {
-               Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecipeOptionsScreen()));
-            },
-          ),
-          const SizedBox(height: 12),
-          _QuickActionCard(
-            icon: Icons.shopping_cart,
-            title: 'Grocery List',
-            subtitle: 'Items you need for recipes',
-            color: AppColors.surface,
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const GroceryScreen()));
-            },
-          ),
-          const SizedBox(height: 32),
-
-          // Recent Activity
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Recent Activity', style: AppTextStyles.titleMedium),
-              Text('See All', style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-             padding: const EdgeInsets.all(16),
-             decoration: BoxDecoration(
-               color: AppColors.surface,
-               borderRadius: BorderRadius.circular(16),
-               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-             ),
-             child: Column(
-               children: [
-                 _ActivityItem(text: 'Cooked Spicy Ramen yesterday', color: AppColors.primary),
-                 const SizedBox(height: 12),
-                 _ActivityItem(text: 'Milk expires in 2 days', color: Colors.orange),
-               ],
-             ),
-          ),
-          const SizedBox(height: 80), // Bottom padding for nav bar
         ],
+      ),
+    );
+  }
+
+  Color _getMatchColor(int percentage) {
+    if (percentage >= 80) return AppColors.primary;
+    if (percentage >= 50) return Colors.orange;
+    return Colors.grey;
+  }
+}
+
+class _EmptyFridgeCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _EmptyFridgeCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+              child: const Icon(Icons.kitchen, color: AppColors.primary, size: 30),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text("Your Fridge is Empty!", style: AppTextStyles.labelLarge),
+                   Text("Add ingredients to get suggestions.", style: AppTextStyles.bodySmall),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
       ),
     );
   }

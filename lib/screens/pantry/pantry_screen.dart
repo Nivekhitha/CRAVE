@@ -12,12 +12,9 @@ class PantryScreen extends StatefulWidget {
 }
 
 class _PantryScreenState extends State<PantryScreen> {
-  final List<String> _filters = ['All', 'Vegetables', 'Proteins', 'Dairy'];
+  final List<String> _filters = ['All', 'Vegetables', 'Proteins', 'Dairy', 'Other'];
   int _selectedFilterIndex = 0;
   final TextEditingController _searchController = TextEditingController();
-
-  // Don't store local list, derive from Provider
-  bool _showAddButton = false;
 
   @override
   Widget build(BuildContext context) {
@@ -30,17 +27,16 @@ class _PantryScreenState extends State<PantryScreen> {
         String category = _filters[_selectedFilterIndex];
 
         final filteredIngredients = allIngredients.where((item) {
-          bool matchesQuery = item['name'].toString().toLowerCase().contains(query);
-          bool matchesCategory = category == 'All' || item['category'] == category;
+          bool matchesQuery = (item['name'] ?? '').toString().toLowerCase().contains(query);
+          // Simple category matching - ensure backend names match these or map them
+          bool matchesCategory = category == 'All' || (item['category'] ?? 'Other') == category;
+          // Handle 'Protein' vs 'Proteins' mismatch potentially
+          if (category == 'Proteins' && item['category'] == 'Protein') matchesCategory = true;
+          
           return matchesQuery && matchesCategory;
         }).toList();
         
-        // Add Button Logic
-        bool showAdd = false;
-        if (query.isNotEmpty) {
-           bool exactMatch = allIngredients.any((item) => item['name'].toString().toLowerCase() == query);
-           showAdd = !exactMatch;
-        }
+        bool showAdd = query.isNotEmpty && !allIngredients.any((item) => (item['name'] ?? '').toString().toLowerCase() == query);
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -64,7 +60,7 @@ class _PantryScreenState extends State<PantryScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                 child: TextField(
                   controller: _searchController,
-                  onChanged: (_) => setState(() {}), // Trigger rebuild to filter
+                  onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => _addNewIngredient(context, userProvider),
                   decoration: InputDecoration(
                     hintText: 'Add an ingredient...',
@@ -78,10 +74,6 @@ class _PantryScreenState extends State<PantryScreen> {
                     filled: true,
                     fillColor: AppColors.surface,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
@@ -122,8 +114,61 @@ class _PantryScreenState extends State<PantryScreen> {
                   }),
                 ),
               ),
+
               
               const SizedBox(height: 16),
+              
+              // Quick Add Chips (Common Items)
+              if (_searchController.text.isEmpty && _filters[_selectedFilterIndex] == 'All')
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        'QUICK ADD', 
+                        style: AppTextStyles.labelSmall.copyWith(letterSpacing: 1.2, color: AppColors.textSecondary)
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Row(
+                        children: [
+                          'Milk', 'Eggs', 'Bread', 'Butter', 'Cheese', 
+                          'Onion', 'Tomato', 'Potato', 'Chicken', 'Rice'
+                        ].where((item) => !userProvider.pantryList.any((p) => (p['name'] as String).toLowerCase() == item.toLowerCase()))
+                         .map((item) {
+                           return Padding(
+                             padding: const EdgeInsets.only(right: 8.0),
+                             child: ActionChip(
+                               label: Text(item),
+                               avatar: const Icon(Icons.add, size: 16, color: AppColors.primary),
+                               backgroundColor: AppColors.surface,
+                               side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                               labelStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                               onPressed: () {
+                                 // Quick Add Action
+                                 final newItem = {
+                                    'name': item,
+                                    'category': _inferCategory(item),
+                                    'quantity': '1', 
+                                  };
+                                  userProvider.addPantryItem(newItem);
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$item added!')));
+                               },
+                             ),
+                           );
+                         }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Align(
@@ -163,8 +208,11 @@ class _PantryScreenState extends State<PantryScreen> {
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final item = filteredIngredients[index];
+                    final String name = item['name'] ?? 'Unknown';
+                    final String id = item['id']; // Must exist from Firestore
+
                     return Dismissible(
-                      key: Key(item['name']), // Hive key logic
+                      key: Key(id),
                       direction: DismissDirection.endToStart,
                       background: Container(
                         alignment: Alignment.centerRight,
@@ -173,23 +221,11 @@ class _PantryScreenState extends State<PantryScreen> {
                           color: Colors.red.shade100,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.delete_outline, color: Colors.red.shade700),
+                        child: const Icon(Icons.delete_outline, color: Colors.red),
                       ),
                       onDismissed: (direction) {
-                        // Use Provider
-                        userProvider.deletePantryItemByValue(item);
-                        
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${item['name']} removed'),
-                            action: SnackBarAction(
-                              label: 'UNDO',
-                              onPressed: () {
-                                userProvider.addPantryItem(item); // Simple undo
-                              },
-                            ),
-                          ),
-                        );
+                        userProvider.deletePantryItem(id);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$name removed')));
                       },
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -199,46 +235,23 @@ class _PantryScreenState extends State<PantryScreen> {
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(IconData(item['iconCode'] ?? 0xe350, fontFamily: 'MaterialIcons'), color: AppColors.textPrimary.withOpacity(0.7)),
+                          child: Icon(_getIconForCategory(item['category']), color: AppColors.textPrimary.withOpacity(0.7)),
                         ),
-                        title: Text(item['name'], style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary)),
-                        trailing: Transform.scale(
-                          scale: 1.2,
-                          child: Checkbox(
-                            value: item['has'],
-                            activeColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                            onChanged: (bool? value) {
-                              // Update Logic
-                              final newItem = Map<String, dynamic>.from(item);
-                              newItem['has'] = value;
-                              // Find index in master list
-                              final masterIndex = allIngredients.indexOf(item);
-                              if (masterIndex != -1) {
-                                userProvider.updatePantryItem(masterIndex, newItem);
-                              }
-                            },
-                          ),
-                        ),
+                        title: Text(name, style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary)),
+                        subtitle: item['quantity'] != null ? Text(item['quantity']) : null,
                       ),
                     );
                   },
                 ),
               ),
     
-              // Save Button (Optional now since auto-save, but keeping for UX)
+              // Done Button
               Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                       if (Navigator.canPop(context)) {
-                         Navigator.pop(context);
-                       } else {
-                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ingredients Saved!')));
-                       }
-                    },
+                    onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.onPrimary,
@@ -262,17 +275,41 @@ class _PantryScreenState extends State<PantryScreen> {
   void _addNewIngredient(BuildContext context, UserProvider provider) {
     if (_searchController.text.isEmpty) return;
     
+    final category = _filters[_selectedFilterIndex] == 'All' ? 'Produce' : _filters[_selectedFilterIndex];
+    
     final newIngredient = {
-      'name': _searchController.text,
-      'iconCode': Icons.kitchen.codePoint, // Store codePoint for Hive
-      'category': _filters[_selectedFilterIndex] == 'All' ? 'Others' : _filters[_selectedFilterIndex],
-      'has': true,
+      'name': _searchController.text.trim(),
+      'category': category,
+      'quantity': '1', // Default quantity
     };
     
     provider.addPantryItem(newIngredient);
     
     _searchController.clear();
-    setState(() {}); // Clear query
+    setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${newIngredient['name']} added!')));
+  }
+
+  IconData _getIconForCategory(String? category) {
+    switch (category) {
+      case 'Vegetables':
+      case 'Produce': 
+        return Icons.eco;
+      case 'Proteins':
+      case 'Protein':
+        return Icons.restaurant;
+      case 'Dairy':
+        return Icons.egg; // Closest to dairy
+      default:
+        return Icons.kitchen;
+    }
+  }
+
+  String _inferCategory(String name) {
+    final lower = name.toLowerCase();
+    if (['milk', 'cheese', 'butter', 'yogurt', 'cream'].contains(lower)) return 'Dairy';
+    if (['chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'steak', 'egg', 'eggs'].contains(lower)) return 'Proteins';
+    if (['onion', 'tomato', 'potato', 'carrot', 'spinach', 'lettuce', 'garlic'].contains(lower)) return 'Vegetables';
+    return 'Other';
   }
 }

@@ -28,4 +28,36 @@ class AuthService {
   
   // Stream of auth changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  // Sign in with Email & Password
+  Future<User?> signInWithEmailAndPassword(String email, String password) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return credential.user;
+    } catch (e) {
+      print('❌ Email sign in failed: $e');
+      rethrow;
+    }
+  }
+
+  // Sign up with Email & Password
+  Future<User?> signUpWithEmailAndPassword(String email, String password) async {
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      return credential.user;
+    } catch (e) {
+      print('❌ Email sign up failed: $e');
+      rethrow;
+    }
+  }
+
+  // Sign Out
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+
+  // Password Reset
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
 }

@@ -4,10 +4,12 @@ import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
 
-class RecipeDetailScreen extends StatefulWidget {
-  final Map<String, dynamic>? recipeData;
+import '../../models/recipe.dart'; // Add model import
 
-  const RecipeDetailScreen({super.key, this.recipeData});
+class RecipeDetailScreen extends StatefulWidget {
+  final Recipe? recipe; // Change to Recipe object
+
+  const RecipeDetailScreen({super.key, this.recipe});
 
   @override
   State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
@@ -18,32 +20,53 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Mock Data (if not passed)
-    final data = widget.recipeData ?? {
-      'title': 'One-Pot Creamy Pesto Pasta',
-      'description': 'Perfect for busy evenings. This creamy pasta combines fresh basil pesto with a touch of heavy cream for a silky finish, all made in just one pot to save you from doing the dishes.',
-      'duration': '20 mins',
-      'difficulty': 'Easy',
-      'ingredients': [
-        {'name': 'Penne Pasta', 'amount': '500g', 'has': true},
-        {'name': 'Garlic Cloves', 'amount': '3 units', 'has': true},
-        {'name': 'Heavy Cream', 'amount': '1 cup', 'has': false},
-        {'name': 'Basil Pesto', 'amount': '1/2 cup', 'has': true},
-        {'name': 'Parmesan Cheese', 'amount': '1/4 cup', 'has': false},
-      ],
-      'isTrending': true,
-      'steps': [
+    // Fallback Mock Data IF recipe is null (for testing/preview)
+    final Recipe recipe = widget.recipe ?? Recipe(
+      id: 'mock',
+      title: 'One-Pot Creamy Pesto Pasta',
+      description: 'Perfect for busy evenings. This creamy pasta combines fresh basil pesto with a touch of heavy cream for a silky finish.',
+      ingredients: ['Penne Pasta', 'Garlic Cloves', 'Heavy Cream', 'Basil Pesto', 'Parmesan Cheese'],
+      instructions: [
         'Boil water in a large pot. Add salt and pasta. Cook until al dente.',
         'Reserve 1/2 cup of pasta water. Drain the rest.',
         'In the same pot (or a pan), add the pesto and heavy cream. Simmer for 1-2 mins.',
         'Toss the pasta in the sauce. Add pasta water if too thick.',
         'Serve hot with parmesan cheese.'
       ],
-    };
+      cookTime: 20,
+      difficulty: 'Easy',
+      isPremium: false, 
+      imageUrl: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80',
+      createdAt: DateTime.now(),
+    );
 
-    return Scaffold(
-      backgroundColor: AppColors.background, // Light Theme!
-      body: Stack(
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        // Determine which ingredients we have
+        final pantryNames = userProvider.pantryList.map((e) => (e['name'] as String).toLowerCase()).toSet();
+        
+        // Map ingredients to display model
+        final displayIngredients = recipe.ingredients.map((rawName) {
+           bool hasIt = false;
+           // Fuzzy check
+           final lower = rawName.toLowerCase();
+           if (pantryNames.contains(lower)) {
+             hasIt = true;
+           } else {
+             // Basic containment check
+             hasIt = pantryNames.any((p) => p.contains(lower) || lower.contains(p));
+           }
+           
+           return {
+             'name': rawName, 
+             'amount': '', // Recipe model doesn't split amount/name yet (MVP)
+             'has': hasIt
+           };
+        }).toList();
+
+        return Scaffold(
+          backgroundColor: AppColors.background, 
+          body: Stack(
         children: [
           SafeArea(
             child: Column(
@@ -84,158 +107,157 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(24),
                                 image: const DecorationImage(
-                                  // Placeholder image
-                                  image: NetworkImage('https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'),
-                                  fit: BoxFit.cover,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
+                                    image: NetworkImage(recipe.imageUrl ?? 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601'),
+                                    fit: BoxFit.cover,
                                   ),
-                                ],
-                              ),
-                            ),
-                            // Dark Gradient Overlay (Keep dark for text visibility on image)
-                            Container(
-                              height: 320,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.7),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
                                   ],
                                 ),
                               ),
-                            ),
-                            // Title & Badge content
-                            Positioned(
-                              bottom: 24,
-                              left: 24,
-                              right: 24,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (data['isTrending'])
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        'TRENDING', 
-                                        style: AppTextStyles.labelSmall.copyWith(
-                                          color: Colors.white, 
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.2,
-                                        )
-                                      ),
-                                    ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    data['title'],
-                                    style: AppTextStyles.headlineLarge.copyWith(
-                                      color: Colors.white, 
-                                      height: 1.1,
-                                      fontSize: 32,
-                                    ),
+                              // Dark Gradient Overlay (Keep dark for text visibility on image)
+                              Container(
+                                height: 320,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withOpacity(0.7),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Stats Cards
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.schedule, 
-                                label: 'TIME', 
-                                value: data['duration']
+                              // Title & Badge content
+                              Positioned(
+                                bottom: 24,
+                                left: 24,
+                                right: 24,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (recipe.cookCount > 100) // Simple trending logic
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'TRENDING', 
+                                          style: AppTextStyles.labelSmall.copyWith(
+                                            color: Colors.white, 
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.2,
+                                          )
+                                        ),
+                                      ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      recipe.title,
+                                      style: AppTextStyles.headlineLarge.copyWith(
+                                        color: Colors.white, 
+                                        height: 1.1,
+                                        fontSize: 32,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.restaurant_menu, // Using as difficulty icon
-                                label: 'DIFFICULTY', 
-                                value: data['difficulty']
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+  
+                          // Stats Cards
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  icon: Icons.schedule, 
+                                  label: 'TIME', 
+                                  value: '${recipe.cookTime} min'
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Description
-                        Text(
-                          data['description'],
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Ingredients Header
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(8),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  icon: Icons.restaurant_menu, // Using as difficulty icon
+                                  label: 'DIFFICULTY', 
+                                  value: recipe.difficulty ?? 'Medium'
+                                ),
                               ),
-                              child: const Icon(Icons.kitchen, size: 20, color: Colors.white),
-                            ),
-                            const SizedBox(width: 12),
-                            Text('Ingredients You Have', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Ingredients List
-                        ListView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: (data['ingredients'] as List).length,
-                          itemBuilder: (context, index) {
-                            final item = data['ingredients'][index];
-                            return _IngredientTile(item: item);
-                          },
-                        ),
-                        
-                        const SizedBox(height: 32),
-
-                        // Instructions Header
-                         Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(8),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+  
+                          // Description
+                          Text(
+                            recipe.description ?? 'No description available for this recipe.',
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
+                          ),
+                          const SizedBox(height: 32),
+  
+                          // Ingredients Header
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.kitchen, size: 20, color: Colors.white),
                               ),
-                              child: const Icon(Icons.menu_book, size: 20, color: Colors.white),
-                            ),
-                            const SizedBox(width: 12),
-                            Text('Preparation', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Instructions List
-                        if (data['steps'] != null)
+                              const SizedBox(width: 12),
+                              Text('Ingredients', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+  
+                          // Ingredients List
                           ListView.builder(
                             physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
-                            itemCount: (data['steps'] as List).length,
+                            itemCount: displayIngredients.length,
                             itemBuilder: (context, index) {
-                              final step = data['steps'][index];
+                              final item = displayIngredients[index];
+                              return _IngredientTile(item: item);
+                            },
+                          ),
+                          
+                          const SizedBox(height: 32),
+  
+                          // Instructions Header
+                           Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.menu_book, size: 20, color: Colors.white),
+                              ),
+                              const SizedBox(width: 12),
+                              Text('Preparation', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+  
+                          // Instructions List
+                          if (recipe.instructions.isNotEmpty)
+                            ListView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: recipe.instructions.length,
+                              itemBuilder: (context, index) {
+                                final step = recipe.instructions[index];
                               final isCompleted = _completedSteps.contains(index);
                               return GestureDetector(
                                 onTap: () {
@@ -338,6 +360,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 }
