@@ -26,18 +26,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       title: 'One-Pot Creamy Pesto Pasta',
       description: 'Perfect for busy evenings. This creamy pasta combines fresh basil pesto with a touch of heavy cream for a silky finish.',
       ingredients: ['Penne Pasta', 'Garlic Cloves', 'Heavy Cream', 'Basil Pesto', 'Parmesan Cheese'],
-      instructions: [
-        'Boil water in a large pot. Add salt and pasta. Cook until al dente.',
-        'Reserve 1/2 cup of pasta water. Drain the rest.',
-        'In the same pot (or a pan), add the pesto and heavy cream. Simmer for 1-2 mins.',
-        'Toss the pasta in the sauce. Add pasta water if too thick.',
-        'Serve hot with parmesan cheese.'
-      ],
+      instructions: 'Boil water in a large pot. Add salt and pasta. Cook until al dente.\nReserve 1/2 cup of pasta water. Drain the rest.\nIn the same pot (or a pan), add the pesto and heavy cream. Simmer for 1-2 mins.\nToss the pasta in the sauce. Add pasta water if too thick.\nServe hot with parmesan cheese.',
       cookTime: 20,
       difficulty: 'Easy',
       isPremium: false, 
       imageUrl: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80',
       createdAt: DateTime.now(),
+      source: 'manual',
     );
 
     return Consumer<UserProvider>(
@@ -106,18 +101,29 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(24),
-                                image: const DecorationImage(
-                                    image: NetworkImage(recipe.imageUrl ?? 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601'),
-                                    fit: BoxFit.cover,
+                                color: Colors.grey[300],
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
+                                ],
+                              ),
+                              child: recipe.imageUrl != null 
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: Image.network(
+                                      recipe.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Center(
+                                        child: Icon(Icons.fastfood, color: Colors.grey, size: 50)
+                                      ),
                                     ),
-                                  ],
-                                ),
+                                  )
+                                : const Center(
+                                    child: Icon(Icons.fastfood, color: Colors.grey, size: 50)
+                                  ),
                               ),
                               // Dark Gradient Overlay (Keep dark for text visibility on image)
                               Container(
@@ -231,6 +237,41 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             },
                           ),
                           
+                          // Add Missing to Grocery Button
+                          if (displayIngredients.any((i) => !(i['has'] as bool)))
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16.0),
+                              child: Center(
+                                child: TextButton.icon(
+                                  onPressed: () {
+                                    final missing = displayIngredients
+                                      .where((i) => !(i['has'] as bool))
+                                      .map((i) => i['name'] as String)
+                                      .toList();
+                                    
+                                    Provider.of<UserProvider>(context, listen: false).addMultipleGroceryItems(missing);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Added ${missing.length} items to Grocery List 🛒'),
+                                        backgroundColor: AppColors.primary,
+                                      )
+                                    );
+                                  },
+                                  icon: const Icon(Icons.add_shopping_cart, color: AppColors.primary),
+                                  label: Text(
+                                    'Add Missing to Grocery List',
+                                    style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                            ),
+
                           const SizedBox(height: 32),
   
                           // Instructions Header
@@ -251,13 +292,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           const SizedBox(height: 16),
   
                           // Instructions List
-                          if (recipe.instructions.isNotEmpty)
+                          if (recipe.instructions != null && recipe.instructions!.isNotEmpty)
                             ListView.builder(
                               physics: const NeverScrollableScrollPhysics(),
                               shrinkWrap: true,
-                              itemCount: recipe.instructions.length,
+                              itemCount: recipe.instructions!.split('\n').length,
                               itemBuilder: (context, index) {
-                                final step = recipe.instructions[index];
+                                final steps = recipe.instructions!.split('\n');
+                                final step = steps[index];
                               final isCompleted = _completedSteps.contains(index);
                               return GestureDetector(
                                 onTap: () {

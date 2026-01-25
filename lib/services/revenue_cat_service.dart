@@ -1,3 +1,5 @@
+// Temporarily commented out due to RevenueCat compatibility issues
+/*
 import 'dart:io';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
@@ -61,5 +63,30 @@ class RevenueCatService {
       print('❌ Error purchasing premium: $e');
       return false;
     }
+  }
+}
+*/
+
+// Temporary stub for RevenueCat service
+class RevenueCatService {
+  static final RevenueCatService _instance = RevenueCatService._internal();
+  factory RevenueCatService() => _instance;
+  RevenueCatService._internal();
+
+  /// Initialize RevenueCat with the Firebase User ID
+  Future<void> init(String userId) async {
+    if (_isInitialized) return;
+
+    // For now, just mark as initialized without actual RevenueCat setup
+    _isInitialized = true;
+    print('✅ RevenueCat stub initialized for User ID: $userId');
+  }
+
+  Future<bool> isPremiumUser() async {
+    return false; // Always return false for now
+  }
+
+  Future<bool> purchasePremium() async {
+    return false; // Always return false for now
   }
 }

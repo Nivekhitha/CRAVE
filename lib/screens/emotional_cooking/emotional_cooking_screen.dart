@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
+import '../../models/recipe.dart';
 
 class EmotionalCookingScreen extends StatefulWidget {
   const EmotionalCookingScreen({super.key});
@@ -186,18 +187,18 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                     onTap: () {
                       // Navigate directly to Detail Screen with this mock data
                       Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeDetailScreen(
-                        recipeData: {
-                          'title': recipe['title'],
-                          'description': 'A perfect recipe for when you are feeling $_selectedMood.', // Dynamic description
-                          'duration': '30 mins',
-                          'difficulty': 'Medium',
-                          'ingredients': [
-                            {'name': 'Secret Ingredient', 'amount': '1 pinch', 'has': true},
-                            {'name': 'Love', 'amount': 'Lots', 'has': true},
-                          ],
-                          'isTrending': false,
-                          'steps': ['Smile.', 'Cook.', 'Enjoy!'],
-                        },
+                        recipe: Recipe(
+                          id: 'emotional_${index}',
+                          title: recipe['title'],
+                          description: 'A perfect recipe for when you are feeling $_selectedMood.',
+                          ingredients: ['Secret Ingredient', 'Love'],
+                          instructions: 'Smile.\nCook.\nEnjoy!',
+                          cookTime: 30,
+                          difficulty: 'Medium',
+                          isPremium: false,
+                          source: 'manual',
+                          imageUrl: recipe['image'],
+                        ),
                       )));
                     },
                     child: Container(

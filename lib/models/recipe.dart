@@ -50,6 +50,9 @@ class Recipe extends HiveObject {
   @HiveField(14)
   List<String>? tags; // e.g., 'quick', 'healthy', 'vegetarian'
 
+  @HiveField(15)
+  String? difficulty; // 'Easy', 'Medium', 'Hard'
+
   // Non-persisted field for demo flow (Extraction -> Editor)
   String? description;
 
@@ -69,6 +72,7 @@ class Recipe extends HiveObject {
     this.lastCookedAt,
     this.cookCount = 0,
     this.tags,
+    this.difficulty,
     this.description,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -117,6 +121,7 @@ class Recipe extends HiveObject {
       'lastCookedAt': lastCookedAt != null ? Timestamp.fromDate(lastCookedAt!) : null,
       'cookCount': cookCount,
       'tags': tags,
+      'difficulty': difficulty,
     };
   }
 
@@ -137,6 +142,7 @@ class Recipe extends HiveObject {
       lastCookedAt: (map['lastCookedAt'] as Timestamp?)?.toDate(),
       cookCount: map['cookCount'] ?? 0,
       tags: map['tags'] != null ? List<String>.from(map['tags']) : null,
+      difficulty: map['difficulty'],
     );
   }
 

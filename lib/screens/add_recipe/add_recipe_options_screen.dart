@@ -3,6 +3,7 @@ import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import 'video_link_screen.dart';
 import 'cookbook_upload_screen.dart';
+import 'add_recipe_screen.dart';
 
 class AddRecipeOptionsScreen extends StatelessWidget {
   const AddRecipeOptionsScreen({super.key});
@@ -57,6 +58,19 @@ class AddRecipeOptionsScreen extends StatelessWidget {
               iconColor: Colors.orange,
               onTap: () {
                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CookbookUploadScreen()));
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Manual Entry Option
+            _OptionCard(
+              icon: Icons.edit_note,
+              title: 'Enter Manually',
+              subtitle: 'Type in ingredients and instructions yourself.',
+              color: AppColors.surface,
+              iconColor: AppColors.primary,
+              onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AddRecipeScreen()));
               },
             ),
           ],

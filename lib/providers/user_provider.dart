@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/migration_service.dart';
@@ -158,8 +157,24 @@ class UserProvider extends ChangeNotifier {
   // void deletePantryItemByValue... 
 
   // Grocery Actions
-  Future<void> addGroceryItem(Map<String, dynamic> item) async {
      await _firestore.addGroceryItem(item);
+  }
+
+  Future<void> addMultipleGroceryItems(List<String> items) async {
+    for (var item in items) {
+       // Check if already exists to avoid duplicates (Simple check)
+       final exists = _groceryList.any((g) => g['name'].toString().toLowerCase() == item.toLowerCase());
+       if (!exists) {
+         await _firestore.addGroceryItem({
+           'name': item,
+           'isChecked': false,
+           'category': 'Pantry', // Default category
+           'quantity': '1',
+           'price': 0.0,
+         });
+       }
+    }
+    notifyListeners();
   }
 
   Future<void> toggleGroceryItem(int index) async {
