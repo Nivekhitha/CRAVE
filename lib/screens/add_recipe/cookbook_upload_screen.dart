@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../services/recipe_extraction_service.dart';
+import '../../models/recipe.dart';
 import 'cookbook_results_screen.dart';
 
 class CookbookUploadScreen extends StatefulWidget {
@@ -15,19 +17,53 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
   bool _isLoading = false;
   bool _fileSelected = false;
 
-  void _uploadAndExtract() {
+  Future<void> _uploadAndExtract() async {
     if (!_fileSelected) return;
 
     setState(() => _isLoading = true);
 
-    // Simulate Processing
-    Timer(const Duration(seconds: 3), () {
-      setState(() => _isLoading = false);
-      Navigator.pushReplacement(
-        context, 
-        MaterialPageRoute(builder: (_) => const CookbookResultsScreen())
-      );
-    });
+    try {
+      // For this demo, we are mocking the FILE READ but calling the REAL service.
+      // We pass a dummy base64 string that the backend recognizes as "PDF Context".
+      // In a real app, you would read the File bytes here.
+      const dummyPdfBase64 = "JVBERi0xLjQKJ..."; 
+      
+      final Recipe? recipe = await RecipeExtractionService().extractRecipe(pdfBase64: dummyPdfBase64);
+
+      if (recipe != null) {
+        if (!mounted) return;
+        
+        // Transform the single recipe into a list format for the results screen
+        final extractedList = [
+          {
+            'title': recipe.title,
+            'duration': recipe.cookCount > 0 ? '${recipe.cookCount} min' : '25 min', 
+            'difficulty': 'Medium',
+            'fullRecipe': recipe, // We pass the full object to use later
+            'selected': true,
+          }
+        ];
+
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (_) => CookbookResultsScreen(extractedRecipes: extractedList))
+        );
+      } else {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No recipes found in this document.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

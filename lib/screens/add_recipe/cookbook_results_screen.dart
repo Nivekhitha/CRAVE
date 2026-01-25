@@ -2,42 +2,78 @@ import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 
+import 'add_recipe_screen.dart';
+import '../../models/recipe.dart';
+
 class CookbookResultsScreen extends StatefulWidget {
-  const CookbookResultsScreen({super.key});
+  final List<Map<String, dynamic>>? extractedRecipes;
+
+  const CookbookResultsScreen({super.key, this.extractedRecipes});
 
   @override
   State<CookbookResultsScreen> createState() => _CookbookResultsScreenState();
 }
 
 class _CookbookResultsScreenState extends State<CookbookResultsScreen> {
-  final List<Map<String, dynamic>> _extractedRecipes = [
-    {
-      'title': 'Classic Pancakes',
-      'duration': '20 min',
-      'difficulty': 'Easy',
-      'selected': true,
-    },
-    {
-      'title': 'Blueberry Muffin',
-      'duration': '35 min',
-      'difficulty': 'Medium',
-      'selected': true,
-    },
-    {
-      'title': 'French Toast High Protein',
-      'duration': '15 min',
-      'difficulty': 'Easy',
-      'selected': false,
-    },
-  ];
+  late List<Map<String, dynamic>> _extractedRecipes;
+
+  @override
+  void initState() {
+    super.initState();
+    _extractedRecipes = widget.extractedRecipes ?? [
+      {
+        'title': 'Classic Pancakes',
+        'duration': '20 min',
+        'difficulty': 'Easy',
+        'selected': true,
+      },
+      {
+        'title': 'Blueberry Muffin',
+        'duration': '35 min',
+        'difficulty': 'Medium',
+        'selected': true,
+      },
+    ];
+  }
 
   int get _selectedCount => _extractedRecipes.where((r) => r['selected']).length;
 
   void _saveSelected() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved $_selectedCount recipes to your collection!')),
-    );
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    final selected = _extractedRecipes.where((r) => r['selected']).toList();
+    if (selected.isEmpty) return;
+
+    if (selected.length == 1) {
+      // Powerful Demo Moment: Go to editor to show fields matched
+      final item = selected.first;
+      Map<String, dynamic> initialData = {};
+      
+      if (item['fullRecipe'] != null) {
+        final Recipe r = item['fullRecipe'];
+        initialData = {
+          'title': r.title,
+          'description': r.description,
+          'servings': 2,
+          'duration': 20,
+          'difficulty': 'Medium',
+          'ingredients': r.ingredients,
+          'steps': r.instructions?.split('\n\n') ?? [],
+        };
+      } else {
+        // Fallback or legacy dummy data
+        initialData = {'title': item['title']};
+      }
+
+      Navigator.push(
+        context, 
+        MaterialPageRoute(builder: (_) => AddRecipeScreen(initialData: initialData))
+      );
+    } else {
+      // Bulk save (simulated)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved $_selectedCount recipes to your collection!')),
+      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   @override

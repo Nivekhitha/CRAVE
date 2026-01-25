@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'grocery_item.g.dart';
 
@@ -43,6 +44,32 @@ class GroceryItem extends HiveObject {
 
   // For display
   String get displayName => quantity != null ? '$name ($quantity)' : name;
+
+  // --- Firestore Serialization ---
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'isChecked': isChecked,
+      'category': category,
+      'quantity': quantity,
+      'addedDate': Timestamp.fromDate(addedDate),
+      'recipeId': recipeId,
+    };
+  }
+
+  factory GroceryItem.fromMap(Map<String, dynamic> map, String docId) {
+    return GroceryItem(
+      id: docId,
+      name: map['name'] ?? '',
+      isChecked: map['isChecked'] ?? false,
+      category: map['category'] ?? 'Other',
+      quantity: map['quantity'],
+      addedDate: (map['addedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      recipeId: map['recipeId'],
+    );
+  }
 
   @override
   String toString() => 'GroceryItem(name: $name, checked: $isChecked)';

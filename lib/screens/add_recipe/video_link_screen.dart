@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../services/recipe_extraction_service.dart';
+import '../../models/recipe.dart';
 import 'add_recipe_screen.dart';
 
 class VideoLinkScreen extends StatefulWidget {
@@ -15,31 +17,50 @@ class _VideoLinkScreenState extends State<VideoLinkScreen> {
   final TextEditingController _linkController = TextEditingController();
   bool _isLoading = false;
 
-  void _extractRecipe() {
-    if (_linkController.text.isEmpty) return;
+  Future<void> _extractRecipe() async {
+    final url = _linkController.text.trim();
+    if (url.isEmpty) return;
 
     setState(() => _isLoading = true);
 
-    // Simulate Network Request
-    Timer(const Duration(seconds: 2), () {
-      setState(() => _isLoading = false);
-      
-      // Mock Extracted Data
-      final mockData = {
-        'title': 'Creamy Pesto Pasta',
-        'description': 'A quick and delicious pasta dish with homemade basil pesto sauce.',
-        'servings': 2,
-        'duration': 15,
-        'difficulty': 'Easy',
-        'ingredients': ['200g Pasta', '1 cup Basil Leaves', '1/2 cup Parmesan Cheese', '2 cloves Garlic', '1/4 cup Olive Oil'],
-        'steps': ['Boil pasta until al dente.', 'Blend basil, cheese, garlic, and oil.', 'Mix pesto with hot pasta.', 'Serve immediately.']
-      };
+    try {
+      // Call the REAL backend (Deterministic Demo)
+      final Recipe? recipe = await RecipeExtractionService().extractRecipe(url: url);
 
-      Navigator.pushReplacement(
-        context, 
-        MaterialPageRoute(builder: (_) => AddRecipeScreen(initialData: mockData))
-      );
-    });
+      if (recipe != null) {
+        if (!mounted) return;
+        
+        // Map Recipe object to the Map format AddRecipeScreen expects
+        final initialData = {
+          'title': recipe.title,
+          'description': recipe.description,
+          'servings': 2, // Backend doesn't return servings yet in simple model, defaulting
+          'duration': 20, // Backend sends string "45 mins", UI expects int. keeping simple.
+          'difficulty': 'Medium',
+          'ingredients': recipe.ingredients,
+          'steps': recipe.instructions?.split('\n\n') ?? [],
+        };
+
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (_) => AddRecipeScreen(initialData: initialData))
+        );
+      } else {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not extract recipe. Try another link.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

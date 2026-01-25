@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'services/hive_service.dart';
-import 'models/ingredient.dart';
-import 'models/recipe.dart';
 import 'app/app.dart';
 import 'providers/user_provider.dart';
+import 'firebase_options.dart'; // Ensure this file exists, assuming it was generated
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,8 +13,18 @@ Future<void> main() async {
   final hiveService = HiveService();
   await hiveService.init();
 
-  // TEST: Add some sample data
-  await _addSampleData();
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint("⚠️ Firebase Init Error: $e");
+    // Fallback or retry logic if needed, but for now just log
+  }
+
+  // TEST: Sample data commented out for production/migration flow
+  // await _addSampleData();
 
   runApp(
     MultiProvider(
@@ -26,43 +36,10 @@ Future<void> main() async {
   );
 }
 
+/*
 Future<void> _addSampleData() async {
   final hive = HiveService();
-
-  // Add sample ingredients
-  await hive.addIngredient(Ingredient(
-    id: '1',
-    name: 'Tomatoes',
-    category: 'Produce',
-    quantity: '3',
-  ));
-
-  await hive.addIngredient(Ingredient(
-    id: '2',
-    name: 'Chicken Breast',
-    category: 'Protein',
-    quantity: '500g',
-  ));
-
-  // Add sample recipe
-  await hive.addRecipe(Recipe(
-    id: '1',
-    title: 'Chicken Tomato Pasta',
-    source: 'manual',
-    ingredients: ['Chicken Breast', 'Tomatoes', 'Pasta', 'Garlic'],
-    prepTime: 15,
-    cookTime: 20,
-    isPremium: false,
-  ));
-
-  // Print statistics
-  print('📊 Statistics:');
-  print(hive.getStatistics());
-
-  // Test recipe matching
-  final topMatches = hive.getTopRecipeMatches(limit: 3);
-  print('\n🍳 Top Recipe Matches:');
-  for (final match in topMatches) {
-    print('${match.key.title}: ${match.value.toStringAsFixed(1)}%');
-  }
+  // ... (Keep mock data for reference if needed)
 }
+*/
+

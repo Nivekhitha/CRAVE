@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../app/routes.dart';
+import '../../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,10 +34,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    // Navigate to Onboarding after 2.5 seconds
+    // Navigate based on Auth State after animation
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
+        final user = AuthService().currentUser;
+        if (user != null) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        } else {
+          // Check if onboarding was already seen? For now go to Onboarding -> Login
+          Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
+        }
       }
     });
   }
