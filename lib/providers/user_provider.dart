@@ -157,6 +157,7 @@ class UserProvider extends ChangeNotifier {
   // void deletePantryItemByValue... 
 
   // Grocery Actions
+  Future<void> addGroceryItem(Map<String, dynamic> item) async {
      await _firestore.addGroceryItem(item);
   }
 

@@ -7,7 +7,8 @@ import '../../models/recipe.dart';
 import '../../services/firestore_service.dart';
 
 class AddRecipeScreen extends StatefulWidget {
-  const AddRecipeScreen({super.key});
+  final Map<String, dynamic>? initialData;
+  const AddRecipeScreen({super.key, this.initialData});
 
   @override
   State<AddRecipeScreen> createState() => _AddRecipeScreenState();
@@ -30,6 +31,19 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   bool _isLoading = false;
 
   final List<String> _difficultyOptions = ['Easy', 'Medium', 'Hard'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      _titleController.text = widget.initialData!['title'] ?? '';
+      _descriptionController.text = widget.initialData!['description'] ?? '';
+      _instructionsController.text = widget.initialData!['instructions'] ?? '';
+      if (widget.initialData!['ingredients'] != null) {
+        _ingredients = List<String>.from(widget.initialData!['ingredients']);
+      }
+    }
+  }
 
   void _addIngredient() {
     if (_ingredientController.text.isNotEmpty) {
