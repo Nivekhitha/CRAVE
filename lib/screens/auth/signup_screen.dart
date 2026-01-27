@@ -16,8 +16,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
-  final _formKey = GlobalKey<FormState>(); // For validation
-  
+  final _formKey = GlobalKey<FormState>();
+
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -38,23 +38,30 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      await _authService.signUpWithEmailAndPassword(
+      final result = await _authService.signUpWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // Navigation handled by stream in main or explicitly here.
-      // Explicit navigation for clarity:
-      if (mounted) {
-         Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+
+      if (result.isSuccess) {
+        // Success - navigation will be handled by auth state stream
+        if (mounted) {
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+        }
+      } else {
+        // Show error
+        if (mounted) {
+          setState(() {
+            _errorMessage = result.error;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = 'An unexpected error occurred. Please try again.';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage!), backgroundColor: Colors.red),
-        );
       }
     } finally {
       if (mounted) {
@@ -79,37 +86,49 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Join Millons of Chefs',
-                  textAlign: TextAlign.start,
-                  style: AppTextStyles.headlineLarge,
-                ),
                 const SizedBox(height: 32),
 
-                // Error Display
+                Text(
+                  'Join Crave',
+                  style: AppTextStyles.headlineLarge,
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'Create your account to start cooking',
+                  style: AppTextStyles.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 48),
+
+                // Error Message
                 if (_errorMessage != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       _errorMessage!,
                       style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(height: 16),
                 ],
 
-                // Email
+                // Email Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -119,14 +138,17 @@ class _SignupScreenState extends State<SignupScreen> {
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter your email';
-                    if (!value.contains('@')) return 'Please enter a valid email';
+                    if (value == null || value.isEmpty)
+                      return 'Please enter your email';
+                    if (!value.contains('@'))
+                      return 'Please enter a valid email';
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 16),
 
-                // Password
+                // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
@@ -136,14 +158,17 @@ class _SignupScreenState extends State<SignupScreen> {
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter a password';
-                    if (value.length < 6) return 'Password must be at least 6 characters';
+                    if (value == null || value.isEmpty)
+                      return 'Please enter a password';
+                    if (value.length < 6)
+                      return 'Password must be at least 6 characters';
                     return null;
                   },
                 ),
-                 const SizedBox(height: 16),
 
-                // Confirm Password
+                const SizedBox(height: 16),
+
+                // Confirm Password Field
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: true,
@@ -153,30 +178,61 @@ class _SignupScreenState extends State<SignupScreen> {
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
                   validator: (value) {
-                    if (value != _passwordController.text) return 'Passwords do not match';
+                    if (value == null || value.isEmpty)
+                      return 'Please confirm your password';
+                    if (value != _passwordController.text)
+                      return 'Passwords do not match';
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+
+                const SizedBox(height: 24),
 
                 // Sign Up Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSignup,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleSignup,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text('Create Account',
+                            style: AppTextStyles.labelLarge
+                                .copyWith(color: AppColors.onPrimary)),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text('Sign Up', style: AppTextStyles.labelLarge.copyWith(color: AppColors.onPrimary)),
+                ),
+
+                const Spacer(),
+
+                // Login Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Already have an account? ",
+                        style: AppTextStyles.bodyMedium),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Text(
+                        'Log in',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

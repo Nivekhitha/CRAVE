@@ -23,7 +23,7 @@ class RecipeCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -35,7 +35,8 @@ class RecipeCard extends StatelessWidget {
             // Image
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
                 child: Container(
                   color: Colors.grey[300],
                   width: double.infinity,
@@ -43,9 +44,17 @@ class RecipeCard extends StatelessWidget {
                       ? Image.network(
                           recipe.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (ctx, _, __) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                          errorBuilder: (ctx, _, __) => Container(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            child: const Icon(Icons.restaurant_menu,
+                                color: AppColors.primary, size: 40),
+                          ),
                         )
-                      : const Center(child: Icon(Icons.fastfood, color: Colors.grey, size: 40)),
+                      : Container(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          child: const Icon(Icons.restaurant_menu,
+                              color: AppColors.primary, size: 40),
+                        ),
                 ),
               ),
             ),
@@ -56,8 +65,11 @@ class RecipeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    (recipe.tags?.isNotEmpty ?? false) ? recipe.tags!.first.toUpperCase() : 'RECIPE',
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontSize: 10),
+                    (recipe.tags?.isNotEmpty ?? false)
+                        ? recipe.tags!.first.toUpperCase()
+                        : 'RECIPE',
+                    style: AppTextStyles.labelSmall
+                        .copyWith(color: AppColors.primary, fontSize: 10),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -69,15 +81,19 @@ class RecipeCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.timer, size: 14, color: AppColors.textSecondary),
+                      const Icon(Icons.timer,
+                          size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text('${recipe.totalTime ?? 0} min', style: AppTextStyles.bodySmall),
+                      Text('${recipe.totalTime ?? 0} min',
+                          style: AppTextStyles.bodySmall),
                       const Spacer(),
                       // Rating removed as it is not in the model
                       if (recipe.isPremium) ...[
-                         const Icon(Icons.lock, size: 14, color: Colors.amber),
-                         const SizedBox(width: 4),
-                         Text('Premium', style: AppTextStyles.bodySmall.copyWith(color: Colors.amber)),
+                        const Icon(Icons.lock, size: 14, color: Colors.amber),
+                        const SizedBox(width: 4),
+                        Text('Premium',
+                            style: AppTextStyles.bodySmall
+                                .copyWith(color: Colors.amber)),
                       ]
                     ],
                   ),

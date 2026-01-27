@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/migration_service.dart';
+import '../utils/debouncer.dart';
+import '../utils/exceptions.dart';
 
 import '../models/recipe.dart';
 import '../services/recipe_matching_service.dart';
@@ -13,6 +15,7 @@ class UserProvider extends ChangeNotifier {
   final FirestoreService _firestore = FirestoreService();
   final MigrationService _migration = MigrationService();
   final RecipeMatchingService _matcher = RecipeMatchingService();
+  final ActionThrottler _actionThrottler = ActionThrottler(cooldownMs: 500);
 
   // State Variables
   User? _user;
@@ -23,7 +26,7 @@ class UserProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _pantryList = [];
   List<Recipe> _allRecipes = [];
   List<RecipeMatch> _recipeMatches = [];
-  
+
   // Stream Subscriptions
   StreamSubscription? _authSubscription;
   StreamSubscription? _pantrySubscription;
@@ -65,7 +68,7 @@ class UserProvider extends ChangeNotifier {
     _pantrySubscription = _firestore.getPantryStream().listen((snapshot) {
       _pantryList = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id; 
+        data['id'] = doc.id;
         return data;
       }).toList();
       _recalculateMatches(); // Recalculate when pantry changes
@@ -85,15 +88,16 @@ class UserProvider extends ChangeNotifier {
 
     // 3. Subscribe to Public Recipes (for Matching)
     _recipeSubscription?.cancel();
-    _recipeSubscription = _firestore.getPublicRecipesStream().listen((snapshot) {
+    _recipeSubscription =
+        _firestore.getPublicRecipesStream().listen((snapshot) {
       _allRecipes = snapshot.docs.map((doc) {
         return Recipe.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
       _recalculateMatches(); // Recalculate when recipes change
       notifyListeners();
     }, onError: (e) => debugPrint("❌ Recipe Stream Error: $e"));
-    
-    _loadMockStats(); 
+
+    _loadMockStats();
   }
 
   void _recalculateMatches() {
@@ -139,40 +143,101 @@ class UserProvider extends ChangeNotifier {
 
   // ... (Keep existing signature if possible, or update to async)
   // Converting synchronous add to async fire-and-forget for UI responsiveness
-  
+
   Future<void> addPantryItem(Map<String, dynamic> item) async {
     try {
       await _firestore.addPantryItem(item);
+    } on OfflineException catch (e) {
+      debugPrint("📱 Offline: $e");
+      // Show user-friendly offline message but don't throw
+      // Firestore will sync when back online
+    } on AppException catch (e) {
+      debugPrint("❌ Error adding pantry item: $e");
+      rethrow; // Let UI handle specific app exceptions
     } catch (e) {
-      debugPrint("Error adding pantry item: $e");
-      // Optional: rethrow or show user feedback
+      debugPrint("❌ Unexpected error adding pantry item: $e");
+      throw DataException('Failed to add pantry item. Please try again.');
     }
   }
 
   Future<void> deletePantryItem(String id) async {
-    await _firestore.deletePantryItem(id);
+    try {
+      await _firestore.deletePantryItem(id);
+    } on OfflineException catch (e) {
+      debugPrint("📱 Offline: $e");
+      // Item will be deleted when back online
+    } on AppException catch (e) {
+      debugPrint("❌ Error deleting pantry item: $e");
+      rethrow;
+    } catch (e) {
+      debugPrint("❌ Unexpected error deleting pantry item: $e");
+      throw DataException('Failed to delete pantry item. Please try again.');
+    }
   }
 
   // Helper to remove by object equality - Deprecated, use ID
-  // void deletePantryItemByValue... 
+  // void deletePantryItemByValue...
 
   // Grocery Actions
-     await _firestore.addGroceryItem(item);
+  Future<void> addGroceryItem(dynamic item) async {
+    Map<String, dynamic> groceryItem;
+
+    if (item is String) {
+      // If it's a string, create a basic grocery item
+      groceryItem = {
+        'name': item.trim(),
+        'isChecked': false,
+        'category': 'Pantry',
+        'quantity': '1',
+        'price': 0.0,
+      };
+    } else if (item is Map<String, dynamic>) {
+      // If it's already a map, use it directly but ensure required fields
+      groceryItem = {
+        'name': (item['name'] ?? '').toString().trim(),
+        'isChecked': item['isChecked'] ?? item['checked'] ?? false,
+        'category': item['category'] ?? 'Pantry',
+        'quantity': item['quantity'] ?? '1',
+        'price': item['price'] ?? 0.0,
+      };
+    } else {
+      throw ArgumentError('Item must be either String or Map<String, dynamic>');
+    }
+
+    // Edge Case: Prevent empty names
+    if (groceryItem['name'].isEmpty) {
+      debugPrint('⚠️ Attempted to add grocery item with empty name');
+      return;
+    }
+
+    // Edge Case: Duplicate prevention (case-insensitive)
+    final itemName = groceryItem['name'].toLowerCase();
+    final exists = _groceryList
+        .any((g) => (g['name'] as String? ?? '').toLowerCase() == itemName);
+
+    if (exists) {
+      debugPrint(
+          '⚠️ Grocery item "$itemName" already exists, skipping duplicate');
+      return;
+    }
+
+    await _firestore.addGroceryItem(groceryItem);
   }
 
   Future<void> addMultipleGroceryItems(List<String> items) async {
     for (var item in items) {
-       // Check if already exists to avoid duplicates (Simple check)
-       final exists = _groceryList.any((g) => g['name'].toString().toLowerCase() == item.toLowerCase());
-       if (!exists) {
-         await _firestore.addGroceryItem({
-           'name': item,
-           'isChecked': false,
-           'category': 'Pantry', // Default category
-           'quantity': '1',
-           'price': 0.0,
-         });
-       }
+      // Check if already exists to avoid duplicates (Simple check)
+      final exists = _groceryList
+          .any((g) => g['name'].toString().toLowerCase() == item.toLowerCase());
+      if (!exists) {
+        await _firestore.addGroceryItem({
+          'name': item,
+          'isChecked': false,
+          'category': 'Pantry', // Default category
+          'quantity': '1',
+          'price': 0.0,
+        });
+      }
     }
     notifyListeners();
   }
@@ -181,11 +246,12 @@ class UserProvider extends ChangeNotifier {
     if (index < _groceryList.length) {
       final item = _groceryList[index];
       final id = item['id'];
-      await _firestore.updateGroceryItem(id, {'isChecked': !(item['isChecked'] ?? false)});
+      await _firestore
+          .updateGroceryItem(id, {'isChecked': !(item['isChecked'] ?? false)});
     }
   }
 
-  Future<void> deleteGroceryItem(String id) async { 
+  Future<void> deleteGroceryItem(String id) async {
     // Assuming you have a delete method in FirestoreService or logic to remove it.
     // For now we might not have it in FirestoreService based on previous reads, but let's add the provider method.
     // If FirestoreService doesn't have it, we'll need to add it there too, but let's assume we can at least define it here.
@@ -197,7 +263,7 @@ class UserProvider extends ChangeNotifier {
   Future<void> deleteGroceryItemByValue(Map<String, dynamic> item) async {
     // Try to find ID
     if (item.containsKey('id')) {
-       await _firestore.deleteGroceryItem(item['id']);
+      await _firestore.deleteGroceryItem(item['id']);
     }
   }
 
@@ -207,5 +273,70 @@ class UserProvider extends ChangeNotifier {
     // In a real app, verify against last cooked date to only increment streak once per day
     notifyListeners();
   }
-}
 
+  // Bypass authentication for demo purposes
+  Future<void> initializeWithMockUser() async {
+    try {
+      // Create a mock user
+      _user = null; // We'll work without Firebase user
+
+      // Load mock data
+      _loadMockStats();
+      _loadMockData();
+
+      notifyListeners();
+      debugPrint("✅ Mock user initialized successfully");
+    } catch (e) {
+      debugPrint("⚠️ Mock user initialization error: $e");
+    }
+  }
+
+  void _loadMockData() {
+    // Mock pantry data
+    _pantryList = [
+      {'id': '1', 'name': 'Eggs', 'category': 'Protein', 'quantity': '12'},
+      {'id': '2', 'name': 'Milk', 'category': 'Dairy', 'quantity': '1L'},
+      {'id': '3', 'name': 'Bread', 'category': 'Pantry', 'quantity': '1 loaf'},
+      {
+        'id': '4',
+        'name': 'Tomatoes',
+        'category': 'Vegetables',
+        'quantity': '3'
+      },
+      {'id': '5', 'name': 'Cheese', 'category': 'Dairy', 'quantity': '200g'},
+    ];
+
+    // Mock grocery data
+    _groceryList = [
+      {'id': '1', 'name': 'Chicken', 'category': 'Protein', 'isChecked': false},
+      {'id': '2', 'name': 'Rice', 'category': 'Pantry', 'isChecked': false},
+    ];
+
+    // Mock recipes
+    _allRecipes = [
+      Recipe(
+        id: '1',
+        title: 'Scrambled Eggs',
+        ingredients: ['Eggs', 'Milk', 'Butter'],
+        instructions: 'Beat eggs with milk. Cook in buttered pan.',
+        cookTime: 5,
+        difficulty: 'Easy',
+        source: 'manual',
+        createdAt: DateTime.now(),
+      ),
+      Recipe(
+        id: '2',
+        title: 'Grilled Cheese',
+        ingredients: ['Bread', 'Cheese', 'Butter'],
+        instructions: 'Butter bread, add cheese, grill until golden.',
+        cookTime: 10,
+        difficulty: 'Easy',
+        source: 'manual',
+        createdAt: DateTime.now(),
+      ),
+    ];
+
+    // Calculate matches
+    _recalculateMatches();
+  }
+}

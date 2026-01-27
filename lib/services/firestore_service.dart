@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'auth_service.dart';
+import '../utils/exceptions.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -11,7 +12,9 @@ class FirestoreService {
   factory FirestoreService() => _instance;
   FirestoreService._internal() {
     // Enable offline persistence (default in newer SDK versions, but explicit is good)
-    _db.settings = const Settings(persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
+    _db.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
   }
 
   // --- Helpers ---
@@ -30,10 +33,40 @@ class FirestoreService {
       return await operation().timeout(const Duration(seconds: 10));
     } on FirebaseException catch (e) {
       debugPrint('🔥 Firestore Error [${e.code}]: ${e.message}');
-      throw 'Database error: ${e.message}';
+
+      // Handle specific offline scenarios
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        debugPrint(
+            '📱 Device appears to be offline. Data will sync when connection is restored.');
+        throw OfflineException(
+            'You\'re offline. Changes will sync when you\'re back online.');
+      }
+
+      if (e.code == 'permission-denied') {
+        throw AuthException('Permission denied. Please sign in again.');
+      }
+
+      if (e.code == 'not-found') {
+        throw DataException('Data not found. It may have been deleted.');
+      }
+
+      throw FirestoreException('Database error: ${e.message}');
     } catch (e) {
       debugPrint('❌ General Error: $e');
-      throw 'Connection failed. Please check your internet.';
+
+      // Check if it's a timeout (likely offline)
+      if (e.toString().contains('TimeoutException')) {
+        debugPrint('📱 Connection timeout. Check your internet connection.');
+        throw OfflineException(
+            'Connection timeout. Please check your internet connection.');
+      }
+
+      // Check if it's our custom exception
+      if (e is AppException) {
+        rethrow;
+      }
+
+      throw NetworkException('Connection failed. Please check your internet.');
     }
   }
 
@@ -56,7 +89,8 @@ class FirestoreService {
     });
   }
 
-  Future<void> updatePantryItem(String itemId, Map<String, dynamic> updates) async {
+  Future<void> updatePantryItem(
+      String itemId, Map<String, dynamic> updates) async {
     await _perform(() async {
       await _userDoc().collection('pantry').doc(itemId).update(updates);
     });
@@ -71,7 +105,7 @@ class FirestoreService {
   // --- Grocery List ---
 
   Stream<QuerySnapshot> getGroceryStream() {
-     if (_userId == null) return const Stream.empty();
+    if (_userId == null) return const Stream.empty();
     return _userDoc()
         .collection('grocery_list')
         .orderBy('isChecked') // Checked items at bottom
@@ -87,8 +121,9 @@ class FirestoreService {
       await docRef.set(itemData);
     });
   }
-  
-   Future<void> updateGroceryItem(String itemId, Map<String, dynamic> updates) async {
+
+  Future<void> updateGroceryItem(
+      String itemId, Map<String, dynamic> updates) async {
     await _perform(() async {
       await _userDoc().collection('grocery_list').doc(itemId).update(updates);
     });
@@ -101,9 +136,9 @@ class FirestoreService {
   }
 
   // --- Recipes (User Saved/Created) ---
-  
-   Stream<QuerySnapshot> getSavedRecipesStream() {
-     if (_userId == null) return const Stream.empty();
+
+  Stream<QuerySnapshot> getSavedRecipesStream() {
+    if (_userId == null) return const Stream.empty();
     return _userDoc()
         .collection('recipes')
         .orderBy('createdAt', descending: true)
@@ -112,14 +147,15 @@ class FirestoreService {
 
   // --- Public / Global Recipes ---
   Stream<QuerySnapshot> getPublicRecipesStream() {
-    return _db.collection('recipes')
+    return _db
+        .collection('recipes')
         // .where('isPublic', isEqualTo: true) // optional: if we have a flag
         .limit(50) // Limit for MVP performance
         .snapshots();
   }
 
   Future<void> saveRecipe(Map<String, dynamic> recipeData) async {
-     await _perform(() async {
+    await _perform(() async {
       String id = recipeData['id'] ?? _userDoc().collection('recipes').doc().id;
       recipeData['createdAt'] = FieldValue.serverTimestamp();
       await _userDoc().collection('recipes').doc(id).set(recipeData);

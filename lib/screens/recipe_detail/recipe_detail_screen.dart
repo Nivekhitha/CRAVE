@@ -3,11 +3,10 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
-
-import '../../models/recipe.dart'; // Add model import
+import '../../models/recipe.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
-  final Recipe? recipe; // Change to Recipe object
+  final Recipe? recipe;
 
   const RecipeDetailScreen({super.key, this.recipe});
 
@@ -20,391 +19,424 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Fallback Mock Data IF recipe is null (for testing/preview)
-    final Recipe recipe = widget.recipe ?? Recipe(
-      id: 'mock',
-      title: 'One-Pot Creamy Pesto Pasta',
-      description: 'Perfect for busy evenings. This creamy pasta combines fresh basil pesto with a touch of heavy cream for a silky finish.',
-      ingredients: ['Penne Pasta', 'Garlic Cloves', 'Heavy Cream', 'Basil Pesto', 'Parmesan Cheese'],
-      instructions: 'Boil water in a large pot. Add salt and pasta. Cook until al dente.\nReserve 1/2 cup of pasta water. Drain the rest.\nIn the same pot (or a pan), add the pesto and heavy cream. Simmer for 1-2 mins.\nToss the pasta in the sauce. Add pasta water if too thick.\nServe hot with parmesan cheese.',
-      cookTime: 20,
-      difficulty: 'Easy',
-      isPremium: false, 
-      imageUrl: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80',
-      createdAt: DateTime.now(),
-      source: 'manual',
-    );
+    // Fallback Mock Data IF recipe is null
+    final Recipe recipe = widget.recipe ??
+        Recipe(
+          id: 'mock',
+          title: 'One-Pot Creamy Pesto Pasta',
+          description:
+              'Perfect for busy evenings. This creamy pasta combines fresh basil pesto with a touch of heavy cream for a silky finish.',
+          ingredients: [
+            'Penne Pasta',
+            'Garlic Cloves',
+            'Heavy Cream',
+            'Basil Pesto',
+            'Parmesan Cheese'
+          ],
+          instructions:
+              'Boil water in a large pot. Add salt and pasta. Cook until al dente.\nReserve 1/2 cup of pasta water. Drain the rest.\nIn the same pot (or a pan), add the pesto and heavy cream. Simmer for 1-2 mins.\nToss the pasta in the sauce. Add pasta water if too thick.\nServe hot with parmesan cheese.',
+          cookTime: 20,
+          difficulty: 'Easy',
+          isPremium: false,
+          imageUrl:
+              'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80',
+          createdAt: DateTime.now(),
+          source: 'manual',
+        );
 
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         // Determine which ingredients we have
-        final pantryNames = userProvider.pantryList.map((e) => (e['name'] as String).toLowerCase()).toSet();
-        
+        final pantryNames = userProvider.pantryList
+            .map((e) => (e['name'] as String).toLowerCase())
+            .toSet();
+
         // Map ingredients to display model
         final displayIngredients = recipe.ingredients.map((rawName) {
-           bool hasIt = false;
-           // Fuzzy check
-           final lower = rawName.toLowerCase();
-           if (pantryNames.contains(lower)) {
-             hasIt = true;
-           } else {
-             // Basic containment check
-             hasIt = pantryNames.any((p) => p.contains(lower) || lower.contains(p));
-           }
-           
-           return {
-             'name': rawName, 
-             'amount': '', // Recipe model doesn't split amount/name yet (MVP)
-             'has': hasIt
-           };
+          bool hasIt = false;
+          final lower = rawName.toLowerCase();
+          if (pantryNames.contains(lower)) {
+            hasIt = true;
+          } else {
+            hasIt =
+                pantryNames.any((p) => p.contains(lower) || lower.contains(p));
+          }
+
+          return {'name': rawName, 'amount': '', 'has': hasIt};
         }).toList();
 
         return Scaffold(
-          backgroundColor: AppColors.background, 
+          backgroundColor: AppColors.background,
           body: Stack(
-        children: [
-          SafeArea(
-            child: Column(
-              children: [
-                // Custom App Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _CircleButton(
-                        icon: Icons.arrow_back_ios_new, 
-                        onTap: () => Navigator.pop(context)
+            children: [
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Custom App Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _CircleButton(
+                              icon: Icons.arrow_back_ios_new,
+                              onTap: () => Navigator.pop(context)),
+                          Text('Recipe Detail',
+                              style: AppTextStyles.titleLarge
+                                  .copyWith(color: AppColors.textPrimary)),
+                          _CircleButton(icon: Icons.share, onTap: () {}),
+                        ],
                       ),
-                      Text(
-                        'Recipe Detail', 
-                        style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary)
-                      ),
-                      _CircleButton(icon: Icons.share, onTap: () {}),
-                    ],
-                  ),
-                ),
+                    ),
 
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        
-                        // Hero Image Card
-                        Stack(
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              height: 320,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
-                                color: Colors.grey[300],
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: recipe.imageUrl != null 
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(24),
-                                    child: Image.network(
-                                      recipe.imageUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Center(
-                                        child: Icon(Icons.fastfood, color: Colors.grey, size: 50)
-                                      ),
-                                    ),
-                                  )
-                                : const Center(
-                                    child: Icon(Icons.fastfood, color: Colors.grey, size: 50)
-                                  ),
-                              ),
-                              // Dark Gradient Overlay (Keep dark for text visibility on image)
-                              Container(
-                                height: 320,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(24),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withOpacity(0.7),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Title & Badge content
-                              Positioned(
-                                bottom: 24,
-                                left: 24,
-                                right: 24,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (recipe.cookCount > 100) // Simple trending logic
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          'TRENDING', 
-                                          style: AppTextStyles.labelSmall.copyWith(
-                                            color: Colors.white, 
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.2,
-                                          )
-                                        ),
-                                      ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      recipe.title,
-                                      style: AppTextStyles.headlineLarge.copyWith(
-                                        color: Colors.white, 
-                                        height: 1.1,
-                                        fontSize: 32,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-  
-                          // Stats Cards
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _StatCard(
-                                  icon: Icons.schedule, 
-                                  label: 'TIME', 
-                                  value: '${recipe.cookTime} min'
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  icon: Icons.restaurant_menu, // Using as difficulty icon
-                                  label: 'DIFFICULTY', 
-                                  value: recipe.difficulty ?? 'Medium'
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-  
-                          // Description
-                          Text(
-                            recipe.description ?? 'No description available for this recipe.',
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
-                          ),
-                          const SizedBox(height: 32),
-  
-                          // Ingredients Header
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.kitchen, size: 20, color: Colors.white),
-                              ),
-                              const SizedBox(width: 12),
-                              Text('Ingredients', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-  
-                          // Ingredients List
-                          ListView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: displayIngredients.length,
-                            itemBuilder: (context, index) {
-                              final item = displayIngredients[index];
-                              return _IngredientTile(item: item);
-                            },
-                          ),
-                          
-                          // Add Missing to Grocery Button
-                          if (displayIngredients.any((i) => !(i['has'] as bool)))
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              child: Center(
-                                child: TextButton.icon(
-                                  onPressed: () {
-                                    final missing = displayIngredients
-                                      .where((i) => !(i['has'] as bool))
-                                      .map((i) => i['name'] as String)
-                                      .toList();
-                                    
-                                    Provider.of<UserProvider>(context, listen: false).addMultipleGroceryItems(missing);
+                            const SizedBox(height: 16),
 
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Added ${missing.length} items to Grocery List 🛒'),
-                                        backgroundColor: AppColors.primary,
-                                      )
-                                    );
-                                  },
-                                  icon: const Icon(Icons.add_shopping_cart, color: AppColors.primary),
-                                  label: Text(
-                                    'Add Missing to Grocery List',
-                                    style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                ),
+                            // Recipe Title
+                            Text(
+                              recipe.title,
+                              style: AppTextStyles.headlineMedium.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const SizedBox(height: 8),
 
-                          const SizedBox(height: 32),
-  
-                          // Instructions Header
-                           Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(8),
+                            // Recipe Info
+                            Row(
+                              children: [
+                                const Icon(Icons.timer,
+                                    color: AppColors.textSecondary, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${recipe.cookTime} min',
+                                  style: AppTextStyles.bodyMedium
+                                      .copyWith(color: AppColors.textSecondary),
                                 ),
-                                child: const Icon(Icons.menu_book, size: 20, color: Colors.white),
+                                const SizedBox(width: 16),
+                                const Icon(Icons.signal_cellular_alt,
+                                    color: AppColors.textSecondary, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  recipe.difficulty ?? 'Easy',
+                                  style: AppTextStyles.bodyMedium
+                                      .copyWith(color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Hero Image Card
+                            Container(
+                              height: 200,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                               ),
-                              const SizedBox(width: 12),
-                              Text('Preparation', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-  
-                          // Instructions List
-                          if (recipe.instructions != null && recipe.instructions!.isNotEmpty)
-                            ListView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: recipe.instructions!.split('\n').length,
-                              itemBuilder: (context, index) {
-                                final steps = recipe.instructions!.split('\n');
-                                final step = steps[index];
-                              final isCompleted = _completedSteps.contains(index);
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    if (isCompleted) {
-                                      _completedSteps.remove(index);
-                                    } else {
-                                      _completedSteps.add(index);
-                                    }
-                                  });
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 24),
-                                  color: Colors.transparent, // Hit test
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: 28,
-                                        height: 28,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: isCompleted ? Colors.green : AppColors.primary.withOpacity(0.1),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: isCompleted 
-                                          ? const Icon(Icons.check, size: 16, color: Colors.white)
-                                          : Text(
-                                              '${index + 1}',
-                                              style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
-                                            ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Text(
-                                          step,
-                                          style: AppTextStyles.bodyLarge.copyWith(
-                                            color: isCompleted ? AppColors.textSecondary.withOpacity(0.5) : AppColors.textPrimary,
-                                            height: 1.5,
-                                            decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                            decorationColor: AppColors.textSecondary
+                              child: recipe.imageUrl != null &&
+                                      recipe.imageUrl!.isNotEmpty
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Image.network(
+                                        recipe.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            color: AppColors.primary
+                                                .withValues(alpha: 0.1),
+                                          ),
+                                          child: const Center(
+                                            child: Icon(Icons.restaurant_menu,
+                                                color: AppColors.primary,
+                                                size: 60),
                                           ),
                                         ),
                                       ),
-                                    ],
+                                    )
+                                  : const Center(
+                                      child: Icon(Icons.restaurant_menu,
+                                          color: AppColors.primary, size: 60),
+                                    ),
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // Description
+                            if (recipe.description != null &&
+                                recipe.description!.isNotEmpty) ...[
+                              Text(
+                                recipe.description!,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.textSecondary,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                            ],
+
+                            // Ingredients Section
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Ingredients',
+                                    style: AppTextStyles.titleMedium),
+                                if (displayIngredients
+                                    .where((i) => !(i['has'] as bool))
+                                    .isNotEmpty)
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      final missing = displayIngredients
+                                          .where((i) => !(i['has'] as bool))
+                                          .map((i) => i['name'] as String)
+                                          .toList();
+                                      for (final item in missing) {
+                                        userProvider.addGroceryItem({
+                                          'name': item,
+                                          'isChecked': false,
+                                          'category': 'Other'
+                                        });
+                                      }
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content: Text(
+                                                  '${missing.length} items added to grocery list')));
+                                    },
+                                    icon: const Icon(Icons.add_shopping_cart,
+                                        size: 16),
+                                    label: const Text('Add Missing'),
+                                    style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.primary),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Ingredients List
+                            ...displayIngredients.map((ingredient) {
+                              final hasIt = ingredient['has'] as bool;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: hasIt
+                                            ? AppColors.primary
+                                                .withValues(alpha: 0.1)
+                                            : Colors.grey
+                                                .withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Icon(
+                                        _getIngredientIcon(
+                                            ingredient['name'] as String),
+                                        color: hasIt
+                                            ? AppColors.primary
+                                            : Colors.grey,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        ingredient['name'] as String,
+                                        style:
+                                            AppTextStyles.bodyMedium.copyWith(
+                                          color: hasIt
+                                              ? AppColors.textPrimary
+                                              : AppColors.textSecondary,
+                                          decoration: hasIt
+                                              ? null
+                                              : TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      hasIt
+                                          ? Icons.check_circle
+                                          : Icons.circle_outlined,
+                                      color: hasIt ? Colors.green : Colors.grey,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+
+                            const SizedBox(height: 32),
+
+                            // Instructions Section
+                            Text('Instructions',
+                                style: AppTextStyles.titleMedium),
+                            const SizedBox(height: 16),
+
+                            // Instructions List
+                            ...(recipe.instructions ?? '')
+                                .split('\n')
+                                .asMap()
+                                .entries
+                                .map((entry) {
+                              final index = entry.key;
+                              final instruction = entry.value.trim();
+                              if (instruction.isEmpty)
+                                return const SizedBox.shrink();
+
+                              final isCompleted =
+                                  _completedSteps.contains(index);
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      if (isCompleted) {
+                                        _completedSteps.remove(index);
+                                      } else {
+                                        _completedSteps.add(index);
+                                      }
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: isCompleted
+                                          ? AppColors.primary
+                                              .withValues(alpha: 0.1)
+                                          : AppColors.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isCompleted
+                                            ? AppColors.primary
+                                                .withValues(alpha: 0.3)
+                                            : Colors.transparent,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            color: isCompleted
+                                                ? AppColors.primary
+                                                : AppColors.surface,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: isCompleted
+                                                  ? AppColors.primary
+                                                  : AppColors.textSecondary,
+                                            ),
+                                          ),
+                                          child: isCompleted
+                                              ? const Icon(Icons.check,
+                                                  color: Colors.white, size: 16)
+                                              : Center(
+                                                  child: Text(
+                                                    '${index + 1}',
+                                                    style: AppTextStyles
+                                                        .labelSmall
+                                                        .copyWith(
+                                                      color: AppColors
+                                                          .textSecondary,
+                                                    ),
+                                                  ),
+                                                ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            instruction,
+                                            style: AppTextStyles.bodyMedium
+                                                .copyWith(
+                                              color: isCompleted
+                                                  ? AppColors.textSecondary
+                                                  : AppColors.textPrimary,
+                                              decoration: isCompleted
+                                                  ? TextDecoration.lineThrough
+                                                  : null,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
-                            },
-                          ),
-                        
-                        // Bottom Padding for FAB
-                        const SizedBox(height: 100),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
+                            }).toList(),
 
-          // Floating Cook Button
-          Positioned(
-            bottom: 32,
-            left: 24,
-            right: 24,
-            child: SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                   // Update Logic
-                   Provider.of<UserProvider>(context, listen: false).completeCooking();
-                   
-                   ScaffoldMessenger.of(context).showSnackBar(
-                     const SnackBar(
-                       content: Text('Cooking Completed! Streak Updated 🔥'),
-                       backgroundColor: AppColors.primary,
-                       behavior: SnackBarBehavior.floating,
-                     )
-                   );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 4,
-                  shadowColor: AppColors.primary.withOpacity(0.4),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.soup_kitchen, size: 24),
-                    const SizedBox(width: 12),
-                    Text('Cook Today', style: AppTextStyles.titleMedium.copyWith(color: Colors.white)),
+                            const SizedBox(
+                                height: 100), // Bottom padding for FAB
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
+
+              // Floating Action Button
+              Positioned(
+                bottom: 24,
+                left: 24,
+                right: 24,
+                child: ElevatedButton(
+                  onPressed: () {
+                    userProvider.completeCooking();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Recipe completed! 🎉')),
+                    );
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 8,
+                  ),
+                  child: Text(
+                    'Cook Today',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
       },
     );
+  }
+
+  IconData _getIngredientIcon(String name) {
+    final key = name.toLowerCase();
+    if (key.contains('egg')) return Icons.egg_outlined;
+    if (key.contains('milk') || key.contains('dairy')) return Icons.local_drink;
+    if (key.contains('meat') || key.contains('chicken') || key.contains('beef'))
+      return Icons.set_meal;
+    if (key.contains('vegetable') ||
+        key.contains('tomato') ||
+        key.contains('onion')) return Icons.eco;
+    if (key.contains('fruit')) return Icons.apple;
+    if (key.contains('bread') || key.contains('flour'))
+      return Icons.bakery_dining;
+    return Icons.kitchen;
   }
 }
 
@@ -419,109 +451,19 @@ class _CircleButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 44,
-        height: 44,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.surface, // Light background
+          color: AppColors.surface,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Icon(icon, color: AppColors.textPrimary, size: 20),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _StatCard({required this.icon, required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, letterSpacing: 1.1)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(value, style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _IngredientTile extends StatelessWidget {
-  final Map<String, dynamic> item;
-
-  const _IngredientTile({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final bool hasItem = item['has'] ?? false;
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: hasItem ? AppColors.primary : Colors.transparent,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: hasItem ? AppColors.primary : Colors.grey.shade400,
-                width: 2,
-              ),
-            ),
-            child: hasItem ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              item['name'],
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
-            ),
-          ),
-          Text(
-            item['amount'],
-             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-          ),
-        ],
       ),
     );
   }
