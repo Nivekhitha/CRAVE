@@ -50,8 +50,17 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
         
         if (!mounted) return;
 
+        if (recipes.isEmpty) {
+          setState(() {
+            _statusMessage = 'Analysis Complete: No recipes found.';
+            _isUploading = false;
+          });
+          _showErrorDialog("The AI analyzed the PDF but couldn't find any recipes.\n\nTry a different page or a clearer PDF.");
+          return;
+        }
+
         setState(() {
-          _statusMessage = 'Success!';
+          _statusMessage = 'Success! Found ${recipes.length} recipes.';
           _isUploading = false;
         });
 
