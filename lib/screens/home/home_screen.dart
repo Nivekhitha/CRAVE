@@ -10,6 +10,7 @@ import '../emotional_cooking/emotional_cooking_screen.dart';
 import '../cooking_journey/cooking_journey_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
+import '../../services/premium_service.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,6 +22,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize PremiumService when home screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PremiumService>(context, listen: false).initialize();
+    });
+  }
 
   final List<Widget> _screens = [
     const _HomeView(),

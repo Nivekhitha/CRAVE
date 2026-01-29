@@ -27,13 +27,16 @@ Crave solves this by helping users understand *what they can cook right now* and
   Match recipes based on available ingredients and highlight missing items.
 
 - 📝 **Add Recipes**  
-  Add recipes manually or via online video links (simulated for MVP).
+  - Manual entry
+  - **PDF Cookbook Import** - Extract recipes from PDF files using AI
+  - **YouTube Video Extraction** - Extract recipes from cooking videos using Gemini AI
 
 - 🛒 **Smart Grocery List**  
   Automatically generate grocery lists for missing ingredients.
 
 - 💳 **Premium Subscription (RevenueCat)**  
-  Unlock advanced features like unlimited recipes and enhanced matching.
+  - Free: 3 video extractions/month
+  - Premium: Unlimited video extractions + advanced features
 
 - 📱 **Clean, Mobile‑First UI**  
   Designed for Android with simple, intuitive navigation.

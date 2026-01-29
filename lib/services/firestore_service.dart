@@ -189,4 +189,64 @@ class FirestoreService {
       await _userDoc().collection('recipes').doc(id).set(recipeData);
     });
   }
+
+  // --- Video Extraction Tracking (RevenueCat Gating) ---
+
+  /// Get current month's video extraction count for user
+  Future<int> getMonthlyVideoExtractionCount() async {
+    try {
+      final userDoc = await _userDoc().get();
+      if (!userDoc.exists) return 0;
+      
+      final data = userDoc.data() as Map<String, dynamic>?;
+      final extractionData = data?['videoExtractions'] as Map<String, dynamic>?;
+      
+      if (extractionData == null) return 0;
+      
+      // Get current month key (format: "YYYY-MM")
+      final now = DateTime.now();
+      final monthKey = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      
+      return (extractionData[monthKey] as int?) ?? 0;
+    } catch (e) {
+      debugPrint('Error getting extraction count: $e');
+      return 0;
+    }
+  }
+
+  /// Increment monthly video extraction count
+  Future<void> incrementVideoExtractionCount() async {
+    await _perform(() async {
+      final now = DateTime.now();
+      final monthKey = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+      
+      final userDocRef = _userDoc();
+      final userDoc = await userDocRef.get();
+      
+      Map<String, dynamic> extractionData = {};
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>?;
+        extractionData = Map<String, dynamic>.from(data?['videoExtractions'] ?? {});
+      }
+      
+      final currentCount = (extractionData[monthKey] as int?) ?? 0;
+      extractionData[monthKey] = currentCount + 1;
+      
+      await userDocRef.set({
+        'videoExtractions': extractionData,
+        'lastVideoExtractionAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      
+      debugPrint('✅ Incremented video extraction count for $monthKey: ${extractionData[monthKey]}');
+    });
+  }
+
+  /// Reset monthly extraction count (for testing/admin)
+  Future<void> resetMonthlyExtractionCount() async {
+    await _perform(() async {
+      await _userDoc().set({
+        'videoExtractions': {},
+      }, SetOptions(merge: true));
+    });
+  }
 }
