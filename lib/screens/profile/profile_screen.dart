@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../app/routes.dart';
+import '../../services/seed_data_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -57,6 +58,32 @@ class ProfileScreen extends StatelessWidget {
                 },
                 textColor: AppColors.error,
                 iconColor: AppColors.error,
+              ),
+
+              const SizedBox(height: 32),
+              // Developer Options
+              Text('Developer Options', style: AppTextStyles.labelLarge),
+              const SizedBox(height: 12),
+              _ProfileOption(
+                icon: Icons.cloud_upload_outlined,
+                title: 'Seed Recipes (Dev Only)',
+                onTap: () async {
+                  try {
+                     // Lazy import logic or direct usage if service file is imported
+                     // For now, simpler to import at top
+                     await SeedDataService().seedRecipes();
+                     if (context.mounted) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('Recipes seeded successfully!')));
+                     }
+                  } catch (e) {
+                     if (context.mounted) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+                     }
+                  }
+                },
+                iconColor: Colors.purple,
               ),
             ],
           ),

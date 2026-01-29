@@ -193,7 +193,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
                           
                           // Items List
                           ...entry.value.map((item) {
-                            final isChecked = item['checked'];
+final bool isChecked = item['checked'] ?? false;
                             return Dismissible(
                               key: UniqueKey(), // Use unique key for Hive items
                                direction: DismissDirection.endToStart,

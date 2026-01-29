@@ -1,4 +1,6 @@
-import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:read_pdf_text/read_pdf_text.dart';
 import '../models/recipe.dart';
 import '../models/ingredient.dart';
 
@@ -11,13 +13,33 @@ class RecipeExtractionService {
   RecipeExtractionService._internal();
 
   /// Extract recipe from URL or PDF (Simulated locally)
-  Future<Recipe?> extractRecipe({String? url, String? pdfBase64}) async {
-    // 1. Simulate Network Delay for realism
+  /// [pdfPath] is the absolute path to the local PDF file
+  Future<Recipe?> extractRecipe({String? url, String? pdfPath}) async {
+    
+    // PDF Extraction
+    if (pdfPath != null) {
+      try {
+        debugPrint("📄 Parsing PDF: $pdfPath");
+        String text = await ReadPdfText.getPDFtext(pdfPath);
+        
+        if (text.trim().isEmpty) {
+          debugPrint("⚠️ PDF text was empty. It might be an image-only PDF.");
+          return null;
+        }
+
+        return _parseRecipeFromText(text, pdfPath);
+      } catch (e) {
+        debugPrint("❌ Error reading PDF: $e");
+        return null;
+      }
+    }
+
+    // 1. Simulate Network Delay for realism (URL flow simulation)
     await Future.delayed(const Duration(seconds: 2));
 
     final inputString = (url ?? '').toLowerCase();
     
-    // 2. Deterministic Logic: Return specific recipes based on keywords
+    // 2. Deterministic Logic: Return specific recipes based on keywords for DEMO URLS
     if (inputString.contains('pasta') || inputString.contains('spaghetti') || inputString.contains('italian')) {
       return _getRecipeData(_pastaRecipe, url);
     }
@@ -38,7 +60,84 @@ class RecipeExtractionService {
     return _getRecipeData(_defaultRecipe, url);
   }
 
-  /// Helper to convert Map data to Recipe model
+  Recipe _parseRecipeFromText(String text, String sourcePath) {
+    debugPrint("🧠 Heuristic Analysis of PDF Text...");
+    
+    // Heuristic 1: Title
+    // Assume the first non-empty line effectively, or check for specific formatting eventually
+    // For now, we take the first line that looks like a title (not a page number)
+    List<String> lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+    
+    String title = "Extracted Recipe";
+    if (lines.isNotEmpty) {
+      // Simple heuristic: First realistic line is the title
+      title = lines.firstWhere((l) => l.length > 3 && !l.contains('Page'), orElse: () => "Unknown Recipe");
+    }
+
+    // Heuristic 2: Sections
+    List<String> ingredientsRaw = [];
+    List<String> instructionsRaw = [];
+    
+    String? currentSection; // 'ingredients' or 'instructions'
+
+    for (var line in lines) {
+      String lower = line.toLowerCase();
+      
+      // Section Headers
+      if (lower.contains('ingredients') || lower.contains('what you need') || lower.contains('shopping list')) {
+        currentSection = 'ingredients';
+        continue;
+      }
+      
+      if (lower.contains('instructions') || lower.contains('method') || lower.contains('preparation') || lower.contains('directions') || lower.contains('how to make')) {
+        currentSection = 'instructions';
+        continue;
+      }
+
+      // Add Content to Sections
+      if (currentSection == 'ingredients') {
+        // Filter out junk
+        if (line.length < 3) continue;
+        ingredientsRaw.add(line);
+      } else if (currentSection == 'instructions') {
+        // Filter out junk
+        if (line.length < 5) continue;
+        instructionsRaw.add(line);
+      }
+    }
+
+    // Convert to Models
+    List<Ingredient> ingredients = ingredientsRaw.map((raw) {
+      return Ingredient(
+        id: DateTime.now().millisecondsSinceEpoch.toString() + raw.hashCode.toString(),
+        name: raw, // For now, we dump the whole line as name. Smart parsing of "200g cups" is complex without NLP.
+        quantity: '1', 
+        unit: '', 
+        category: 'Pantry', // Default
+      );
+    }).toList();
+
+    String instructions = instructionsRaw.join('\n\n');
+
+    return Recipe(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      description: "Extracted from your cookbook on ${DateTime.now().toString().split(' ')[0]}",
+      source: 'cookbook',
+      sourceUrl: sourcePath, // Using local path as "URL"
+      ingredients: ingredients.map((i) => i.name).toList(), // Saving logical string list
+      instructions: instructions,
+      isPremium: true,
+      imageUrl: 'assets/images/placeholder_food.png',
+      cookCount: 0,
+      tags: ['Cookbook', 'Extracted'],
+      prepTime: 15, // Default
+      cookTime: 20, // Default
+      difficulty: 'Medium', // Default
+    );
+  }
+
+  /// Helper to convert Map data to Recipe model (Legacy Mock)
   Recipe _getRecipeData(Map<String, dynamic> data, String? source) {
     List<Ingredient> ingredients = [];
     if (data['ingredients'] != null) {

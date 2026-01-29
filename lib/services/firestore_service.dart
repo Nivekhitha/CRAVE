@@ -26,6 +26,29 @@ class FirestoreService {
     return _db.collection('users').doc(_userId);
   }
 
+  Future<DocumentSnapshot> getUserDoc(String uid) {
+    return _db.collection('users').doc(uid).get();
+  }
+
+  // --- User Profile ---
+
+  Future<void> createUserProfile({
+    required String uid,
+    required String username,
+    required String country,
+    required String email,
+  }) async {
+    await _perform(() async {
+      await _db.collection('users').doc(uid).set({
+        'username': username,
+        'country': country,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isPremium': false, // Default to free tier
+      }, SetOptions(merge: true));
+    });
+  }
+
   // --- Generic Error Handling ---
 
   Future<T> _perform<T>(Future<T> Function() operation) async {
@@ -61,12 +84,17 @@ class FirestoreService {
             'Connection timeout. Please check your internet connection.');
       }
 
+      // Check if it's our string error (e.g. 'User not authenticated')
+      if (e.toString() == 'User not authenticated') {
+        throw AuthException('You must be logged in to perform this action.');
+      }
+
       // Check if it's our custom exception
       if (e is AppException) {
         rethrow;
       }
 
-      throw NetworkException('Connection failed. Please check your internet.');
+      throw NetworkException('Connection failed. Please check your internet. ($e)');
     }
   }
 

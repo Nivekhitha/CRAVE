@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
-import '../../app/routes.dart';
+import '../../app/routes.dart'; // Ensure correct import
 import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -15,7 +16,10 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _usernameController = TextEditingController(); // NEW
+  final _countryController = TextEditingController(); // NEW
   final _authService = AuthService();
+  final _firestoreService = FirestoreService(); // NEW
   final _formKey = GlobalKey<FormState>();
 
   bool _isLoading = false;
@@ -26,6 +30,8 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _usernameController.dispose(); // NEW
+    _countryController.dispose(); // NEW
     super.dispose();
   }
 
@@ -44,6 +50,14 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (result.isSuccess) {
+        // Create User Profile in Firestore
+        await _firestoreService.createUserProfile(
+          uid: result.user!.uid,
+          username: _usernameController.text.trim(),
+          country: _countryController.text.trim(),
+          email: _emailController.text.trim(),
+        );
+
         // Success - navigation will be handled by auth state stream
         if (mounted) {
           Navigator.of(context)
@@ -127,6 +141,44 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ],
+
+                // Username Field
+                TextFormField(
+                  controller: _usernameController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty)
+                      return 'Please enter a username';
+                    if (value.length < 3)
+                      return 'Username must be at least 3 characters';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Country Field
+                TextFormField(
+                  controller: _countryController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Country',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.public), // Globe icon
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty)
+                      return 'Please enter your country';
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
 
                 // Email Field
                 TextFormField(

@@ -19,6 +19,8 @@ class UserProvider extends ChangeNotifier {
 
   // State Variables
   User? _user;
+  String? _username;
+  String? _country;
   int _cookingStreak = 0;
   int _recipesCooked = 0;
   double _moneySaved = 0.0;
@@ -35,6 +37,8 @@ class UserProvider extends ChangeNotifier {
 
   // Getters
   User? get user => _user;
+  String? get username => _username;
+  String? get country => _country;
   bool get isAuthenticated => _user != null;
   int get cookingStreak => _cookingStreak;
   int get recipesCooked => _recipesCooked;
@@ -54,12 +58,29 @@ class UserProvider extends ChangeNotifier {
       if (user != null) {
         // Attempt migration once on login
         await _migration.migrateIfNeeded();
+        await _fetchUserProfile();
         _subscribeToData();
       } else {
         _clearData();
       }
       notifyListeners();
     });
+
+  }
+
+  Future<void> _fetchUserProfile() async {
+    if (_user == null) return;
+    try {
+      final doc = await _firestore.getUserDoc(_user!.uid);
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        _username = data['username'];
+        _country = data['country'];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("❌ Error fetching user profile: $e");
+    }
   }
 
   void _subscribeToData() {
@@ -81,6 +102,7 @@ class UserProvider extends ChangeNotifier {
       _groceryList = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
+        data['checked'] = data['checked'] ?? data['isChecked'] ?? false;
         return data;
       }).toList();
       notifyListeners();
@@ -94,10 +116,11 @@ class UserProvider extends ChangeNotifier {
         return Recipe.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
       _recalculateMatches(); // Recalculate when recipes change
+      debugPrint("🍲 Fetched ${_allRecipes.length} recipes from Firestore");
       notifyListeners();
     }, onError: (e) => debugPrint("❌ Recipe Stream Error: $e"));
 
-    _loadMockStats();
+
   }
 
   void _recalculateMatches() {
@@ -121,14 +144,11 @@ class UserProvider extends ChangeNotifier {
     _cookingStreak = 0;
     _recipesCooked = 0;
     _moneySaved = 0.0;
+    _username = null;
+    _country = null;
   }
 
-  void _loadMockStats() {
-    // Placeholder to allow UI to show something
-    _cookingStreak = 5;
-    _recipesCooked = 12;
-    _moneySaved = 45.0;
-  }
+
 
   @override
   void dispose() {
@@ -274,69 +294,5 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Bypass authentication for demo purposes
-  Future<void> initializeWithMockUser() async {
-    try {
-      // Create a mock user
-      _user = null; // We'll work without Firebase user
 
-      // Load mock data
-      _loadMockStats();
-      _loadMockData();
-
-      notifyListeners();
-      debugPrint("✅ Mock user initialized successfully");
-    } catch (e) {
-      debugPrint("⚠️ Mock user initialization error: $e");
-    }
-  }
-
-  void _loadMockData() {
-    // Mock pantry data
-    _pantryList = [
-      {'id': '1', 'name': 'Eggs', 'category': 'Protein', 'quantity': '12'},
-      {'id': '2', 'name': 'Milk', 'category': 'Dairy', 'quantity': '1L'},
-      {'id': '3', 'name': 'Bread', 'category': 'Pantry', 'quantity': '1 loaf'},
-      {
-        'id': '4',
-        'name': 'Tomatoes',
-        'category': 'Vegetables',
-        'quantity': '3'
-      },
-      {'id': '5', 'name': 'Cheese', 'category': 'Dairy', 'quantity': '200g'},
-    ];
-
-    // Mock grocery data
-    _groceryList = [
-      {'id': '1', 'name': 'Chicken', 'category': 'Protein', 'isChecked': false},
-      {'id': '2', 'name': 'Rice', 'category': 'Pantry', 'isChecked': false},
-    ];
-
-    // Mock recipes
-    _allRecipes = [
-      Recipe(
-        id: '1',
-        title: 'Scrambled Eggs',
-        ingredients: ['Eggs', 'Milk', 'Butter'],
-        instructions: 'Beat eggs with milk. Cook in buttered pan.',
-        cookTime: 5,
-        difficulty: 'Easy',
-        source: 'manual',
-        createdAt: DateTime.now(),
-      ),
-      Recipe(
-        id: '2',
-        title: 'Grilled Cheese',
-        ingredients: ['Bread', 'Cheese', 'Butter'],
-        instructions: 'Butter bread, add cheese, grill until golden.',
-        cookTime: 10,
-        difficulty: 'Easy',
-        source: 'manual',
-        createdAt: DateTime.now(),
-      ),
-    ];
-
-    // Calculate matches
-    _recalculateMatches();
-  }
 }

@@ -124,7 +124,12 @@ class _HomeView extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_getGreeting(), style: AppTextStyles.titleLarge),
+                        Text(
+                          userProvider.username != null
+                              ? '${_getGreeting()}, ${userProvider.username}'
+                              : _getGreeting(),
+                          style: AppTextStyles.titleLarge,
+                        ),
                         Text('Ready to cook something?',
                             style: AppTextStyles.bodySmall),
                       ],

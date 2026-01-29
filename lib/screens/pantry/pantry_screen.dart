@@ -183,16 +183,25 @@ class _PantryScreenState extends State<PantryScreen> {
                                 .copyWith(color: AppColors.textPrimary),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20)),
-                            onPressed: () {
+                            onPressed: () async {
                               // Quick Add Action
-                              final newItem = {
+                              final Map<String, dynamic> newItem = {
                                 'name': item,
                                 'category': _inferCategory(item),
                                 'quantity': '1',
                               };
-                              userProvider.addPantryItem(newItem);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('$item added!')));
+                              try {
+                                await userProvider.addPantryItem(newItem);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('$item added!')));
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error adding $item: $e'), backgroundColor: Colors.red));
+                                }
+                              }
                             },
                           ),
                         );
@@ -324,25 +333,34 @@ class _PantryScreenState extends State<PantryScreen> {
     });
   }
 
-  void _addNewIngredient(BuildContext context, UserProvider provider) {
+  Future<void> _addNewIngredient(BuildContext context, UserProvider provider) async {
     if (_searchController.text.isEmpty) return;
 
     final category = _filters[_selectedFilterIndex] == 'All'
         ? 'Produce'
         : _filters[_selectedFilterIndex];
 
-    final newIngredient = {
+    final Map<String, dynamic> newIngredient = {
       'name': _searchController.text.trim(),
       'category': category,
       'quantity': '1', // Default quantity
     };
 
-    provider.addPantryItem(newIngredient);
-
-    _searchController.clear();
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${newIngredient['name']} added!')));
+    try {
+      await provider.addPantryItem(newIngredient);
+      
+      _searchController.clear();
+      setState(() {});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${newIngredient['name']} added!')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error adding item: $e'), backgroundColor: Colors.red));
+      }
+    }
   }
 
   IconData _getIconForCategory(String? category) {
