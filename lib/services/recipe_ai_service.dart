@@ -11,99 +11,104 @@ class RecipeAiService {
 
   Future<List<Recipe>> analyzeText(String text) async {
     final key = _apiKey;
+    debugPrint("🔑 Using API Key: ${key != null && key.isNotEmpty ? '${key.substring(0, 5)}...${key.substring(key.length - 4)}' : 'NULL'}");
+    
     if (key == null || key.isEmpty) {
       throw Exception('Gemini API Key is missing. Please check your .env file.');
     }
 
+    // Try available models in order of preference
+    final models = ['gemini-pro'];
+    
+    Exception? lastError;
+    for (final model in models) {
+      try {
+        debugPrint("🤖 Trying model: $model");
+        return await _tryGenerate(key, model, text);
+      } catch (e) {
+        debugPrint("⚠️ Model $model failed: $e");
+        lastError = e is Exception ? e : Exception(e.toString());
+        continue;
+      }
+    }
+    
+    // If all models failed, throw the refined exception
+    throw _refinedException(lastError ?? Exception('All models failed'));
+  }
+
+  Future<List<Recipe>> _tryGenerate(String key, String modelName, String text) async {
     final model = GenerativeModel(
-      model: 'gemini-1.5-flash', 
+      model: modelName, 
       apiKey: key,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
-        temperature: 0.3, // Lower temperature for more consistent JSON output
+        temperature: 0.3, 
       )
     );
 
-    // Truncate text if too long (Gemini has token limits)
+    // Truncate text if too long 
     final maxLength = 100000;
     final truncatedText = text.length > maxLength 
-        ? '${text.substring(0, maxLength)}\n\n[Text truncated - showing first ${maxLength} characters]'
+        ? '${text.substring(0, maxLength)}\n\n[Text truncated]'
         : text;
 
     final prompt = '''
 You are a specialized recipe extraction tool. Extract ALL recipes from the following text and return ONLY valid JSON.
 
 CRITICAL RULES:
-1. Output MUST be valid, raw JSON (no markdown, no code blocks, no explanations)
+1. Output MUST be valid, raw JSON (no markdown, no code blocks)
 2. Start with { and end with }
-3. Extract EVERY complete recipe you find
-4. If text contains Table of Contents, Index, or non-recipe content, skip those sections
-5. If NO recipes found, return: {"recipes": []}
+3. If NO recipes found, return: {"recipes": []}
 
 REQUIRED JSON SCHEMA:
 {
   "recipes": [
     {
-      "title": "Recipe Name (required)",
-      "description": "Brief 1-2 sentence summary (optional)",
-      "ingredients": ["2 cups flour", "1 tsp salt", "etc - include quantities"],
-      "instructions": ["Step 1 description", "Step 2 description", "etc"],
+      "title": "Recipe Name",
+      "description": "Summary",
+      "ingredients": ["1 cup flour"],
+      "instructions": ["Step 1"],
       "prepTime": 15,
       "cookTime": 30,
       "servings": 4,
-      "difficulty": "Easy" or "Medium" or "Hard",
-      "tags": ["Vegan", "Dessert", "etc"]
+      "difficulty": "Easy",
+      "tags": ["Tag1"]
     }
   ]
 }
-
-VALIDATION:
-- Each recipe MUST have: title, at least 2 ingredients, at least 1 instruction
-- prepTime, cookTime, servings should be numbers (minutes/people)
-- difficulty must be "Easy", "Medium", or "Hard" (or null)
 
 TEXT TO ANALYZE:
 $truncatedText
 ''';
 
-    try {
-      debugPrint("🤖 Sending ${truncatedText.length} characters to Gemini...");
-      
+      debugPrint("🤖 Sending request to $modelName...");
       final response = await model.generateContent([Content.text(prompt)]);
       
       if (response.text == null || response.text!.trim().isEmpty) {
-        throw Exception('AI returned empty response. Please try again.');
+        throw Exception('AI returned empty response.');
       }
       
-      debugPrint("✅ Received response (${response.text!.length} chars)");
-      debugPrint("📝 Response preview: ${response.text!.substring(0, response.text!.length > 200 ? 200 : response.text!.length)}...");
-
+      debugPrint("✅ Received response from $modelName");
       final recipes = parseRecipesFromJson(response.text!);
-      
-      if (recipes.isEmpty) {
-        debugPrint("⚠️ No recipes extracted from response");
-      } else {
-        debugPrint("✅ Successfully extracted ${recipes.length} recipe(s)");
-      }
-      
       return recipes;
+  }
 
-    } catch (e) {
-      String errorMessage = "AI Analysis failed: $e";
+  Exception _refinedException(dynamic e) {
+      String msg = e.toString();
+      String userMessage = "Extraction Failed: $msg";
       
-      if (e.toString().contains("not found") || e.toString().contains("404")) {
-        errorMessage = "Gemini API not enabled.\n\nPlease enable 'Generative Language API' in Google Cloud Console.";
-      } else if (e.toString().contains("API_KEY_INVALID") || e.toString().contains("API key")) {
-         errorMessage = "Invalid API Key.\n\nPlease check your .env file contains a valid GEMINI_API_KEY.";
-      } else if (e.toString().contains("quota") || e.toString().contains("429")) {
-        errorMessage = "API quota exceeded.\n\nPlease check your Google Cloud billing and API limits.";
-      } else if (e.toString().contains("No valid JSON")) {
-        errorMessage = "AI response format error.\n\nPlease try again with a clearer PDF.";
+      if (msg.contains("not found") || msg.contains("404")) {
+         // It might be a model name error or API enable error
+         userMessage = "API Error (404): Model not found or API disabled.\nRaw: $msg";
+      } else if (msg.contains("API_KEY_INVALID") || msg.contains("403")) {
+         userMessage = "Auth Error: Invalid API Key.\nRaw: $msg";
+      } else if (msg.contains("SocketException") || msg.contains("Failed to host") || msg.contains("Network")) {
+         userMessage = "Network Error: check internet connection.\nRaw: $msg";
+      } else if (msg.contains("quota") || msg.contains("429")) {
+         userMessage = "Quota Exceeded: Try again later.";
       }
       
-      debugPrint("❌ Gemini API Error: $e");
-      throw Exception(errorMessage);
-    }
+      return Exception(userMessage);
   }
 
   /// Public for testing parsing logic in isolation
