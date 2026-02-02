@@ -16,24 +16,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingContent> _contents = [
     OnboardingContent(
-      image: '', // TODO: Add asset image
-      title: 'Endless Meal Ideas',
-      description: 'Say goodbye to meal planning stress. Discover daily inspiration for your breakfast, lunch, and dinner.',
+      image: 'assets/images/onboarding_inspiration.png',
+      title: 'Endless Inspiration',
+      description: 'Discover thousands of recipes curated just for your taste. Your culinary journey begins here.',
     ),
     OnboardingContent(
-      image: '', // TODO: Add asset image
-      title: 'Share The Love',
-      description: 'Create your own recipes step by step. Add photos or videos and share your recipe with all the world.',
+      image: 'assets/images/onboarding_cooking.png',
+      title: 'Master Your Craft',
+      description: 'Step-by-step guides to help you cook like a Michelin-star chef with what you have in your pantry.',
     ),
     OnboardingContent(
-      image: '', // TODO: Add asset image
-      title: 'Save your favourites',
-      description: 'Your culinary treasures, all in one place. Save and find favourite recipes with ease whenever you want.',
-    ),
-    OnboardingContent(
-      image: '', // TODO: Add asset image
-      title: 'Find friends of interest',
-      description: 'Join a vibrant community of fellow food enthusiasts who share your love for cooking.',
+      image: 'assets/images/onboarding_community.png',
+      title: 'Heart of the Home',
+      description: 'Join a vibrant community of fellow food enthusiasts. Share your passion and celebrate the joy of cooking.',
     ),
   ];
 
@@ -175,15 +170,22 @@ class _OnboardingPage extends StatelessWidget {
       children: [
         // Image Placeholder
         Expanded(
-          flex: 3,
+          flex: 4,
           child: Container(
             margin: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Center(
-              child: Icon(Icons.image, size: 100, color: Colors.grey),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+              image: DecorationImage(
+                image: AssetImage(content.image),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),
