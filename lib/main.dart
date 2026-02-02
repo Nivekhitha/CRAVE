@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Added
@@ -34,6 +35,10 @@ Future<void> main() async {
   // that logic would need to be re-evaluated or moved.
   // For now, assuming Hive.initFlutter() replaces the need for HiveService.init()
   // for the global initialization step.
+  
+  if (kIsWeb) {
+    debugPrint("⚠️ WARNING: RevenueCat is NOT supported on Web. Please run on Android for full features.");
+  }
 
   runApp(
     MultiProvider(

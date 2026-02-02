@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../app/routes.dart';
 import '../../services/auth_service.dart';
+import '../../services/premium_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,6 +35,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
 
     _controller.forward();
+    
+    // Initialize RevenueCat/Premium status
+    // We do this during the splash screen so the app knows if we are premium immediately.
+    context.read<PremiumService>().initialize();
 
     // Navigate based on Auth State after animation
     Future.delayed(const Duration(milliseconds: 2500), () {

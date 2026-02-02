@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'auth_service.dart';
+import 'revenue_cat_service.dart';
 
 class PremiumService extends ChangeNotifier {
   final AuthService _auth = AuthService();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final RevenueCatService _rcService = RevenueCatService();
 
   bool _isPremium = false;
   bool _isLoading = false;
+  Package? _monthlyPackage;
 
   // Getters
   bool get isPremium => _isPremium;
   bool get isLoading => _isLoading;
+  String get monthlyPrice => _monthlyPackage?.storeProduct.priceString ?? "\$4.99";
 
   // Feature limits
   int get maxRecipes => _isPremium ? 999 : 10;
@@ -62,44 +67,79 @@ class PremiumService extends ChangeNotifier {
         ),
       ];
 
-  // Initialize premium status
+  // Initialize premium status and RevenueCat
   Future<void> initialize() async {
-    await _loadPremiumStatus();
+    final userId = _auth.userId;
+    await _rcService.init(userId);
+    await refreshStatus();
   }
 
-  // Load premium status from Firestore
-  Future<void> _loadPremiumStatus() async {
-    try {
-      final userId = _auth.userId;
-      if (userId == null) return;
-
-      final doc = await _db.collection('users').doc(userId).get();
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        _isPremium = data['isPremium'] ?? false;
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('Error loading premium status: $e');
-    }
-  }
-
-  // Simulated purchase (for testing)
-  Future<void> unlockPremium() async {
+  /// Refreshes the premium status from RevenueCat and updates local state
+  Future<void> refreshStatus() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 2));
+      // 1. Check RevenueCat Entitlement
+      _isPremium = await _rcService.isPremiumUser();
+      
+      // 2. Fetch current offerings for UI
+      _monthlyPackage = await _rcService.getMonthlyPackage();
+      
+      // 3. Sync with Firestore (optional backup)
+      if (_isPremium) {
+        await _savePremiumStatus();
+      }
+    } catch (e) {
+      debugPrint('Error refreshing status: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
-      _isPremium = true;
-      await _savePremiumStatus();
+  // Actual purchase flow through RevenueCat
+  Future<void> unlockPremium() async {
+    if (_monthlyPackage == null) {
+      await refreshStatus();
+    }
+    
+    if (_monthlyPackage == null) {
+      throw 'No subscription packages available. Please try again later.';
+    }
 
-      debugPrint('✅ Premium unlocked successfully!');
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      bool success = await _rcService.purchasePackage(_monthlyPackage!);
+      if (success) {
+        _isPremium = true;
+        await _savePremiumStatus();
+        debugPrint('✅ Premium unlocked successfully with RevenueCat!');
+      } else {
+        throw 'Purchase was not completed.';
+      }
     } catch (e) {
       debugPrint('❌ Premium unlock failed: $e');
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Restore purchases for existing users
+  Future<void> restorePurchases() async {
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      bool success = await _rcService.restorePurchases();
+      if (success) {
+        _isPremium = true;
+        await _savePremiumStatus();
+      }
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -299,6 +299,7 @@ class _PaywallScreenState extends State<PaywallScreen>
                 isSelected: _isYearlySelected,
                 isRecommended: true,
                 onTap: () => setState(() => _isYearlySelected = true),
+                premiumService: premiumService,
               ),
 
               Divider(
@@ -314,6 +315,7 @@ class _PaywallScreenState extends State<PaywallScreen>
                 isSelected: !_isYearlySelected,
                 isRecommended: false,
                 onTap: () => setState(() => _isYearlySelected = false),
+                premiumService: premiumService,
               ),
             ],
           ),
@@ -329,6 +331,7 @@ class _PaywallScreenState extends State<PaywallScreen>
     required bool isSelected,
     required bool isRecommended,
     required VoidCallback onTap,
+    required PremiumService premiumService,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -414,7 +417,7 @@ class _PaywallScreenState extends State<PaywallScreen>
 
             // Price
             Text(
-              price,
+              price == '\$4.99' ? premiumService.monthlyPrice : price,
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,
@@ -515,8 +518,26 @@ class _PaywallScreenState extends State<PaywallScreen>
               ),
             ),
             TextButton(
-              onPressed: () {
-                // TODO: Restore purchases
+              onPressed: () async {
+                try {
+                  await context.read<PremiumService>().restorePurchases();
+                  if (mounted && context.read<PremiumService>().isPremium) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Purchases Restored! ✨')),
+                    );
+                    Navigator.pop(context);
+                  } else if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No previous purchases found.')),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Restore failed: $e')),
+                    );
+                  }
+                }
               },
               child: Text(
                 'Restore',

@@ -94,4 +94,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
   );
+
+  static TextStyle get caption => bodySmall;
 }

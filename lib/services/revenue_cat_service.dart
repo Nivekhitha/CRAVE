@@ -1,92 +1,90 @@
-// Temporarily commented out due to RevenueCat compatibility issues
-/*
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+/// A clean, modular service for handling RevenueCat subscriptions.
+/// Designed for the CRAVE competition demo.
 class RevenueCatService {
-  // TODO: Replace with your actual API Keys from RevenueCat Dashboard
-  static const _apiKeyAndroid = 'goog_YOUR_ANDROID_API_KEY'; 
-  static const _apiKeyIOS = 'appl_YOUR_IOS_API_KEY';
+  // TODO: Replace with your actual Public API Key from RevenueCat Dashboard
+  static const _androidApiKey = 'sk_iROILcbzCyhtncYZoSKgwqjQAoyXx';
 
-  // Singleton pattern
   static final RevenueCatService _instance = RevenueCatService._internal();
   factory RevenueCatService() => _instance;
   RevenueCatService._internal();
 
   bool _isInitialized = false;
 
-  /// Initialize RevenueCat with the Firebase User ID
-  Future<void> init(String userId) async {
-    if (_isInitialized) return;
+  /// Initialize the RevenueCat SDK for Android.
+  Future<void> init(String? userId) async {
+    if (_isInitialized || kIsWeb) return;
 
-    await Purchases.setLogLevel(LogLevel.debug);
-
-    PurchasesConfiguration configuration;
-    if (Platform.isAndroid) {
-      configuration = PurchasesConfiguration(_apiKeyAndroid);
-    } else {
-      configuration = PurchasesConfiguration(_apiKeyIOS);
-    }
-
-    configuration.appUserID = userId;
-    await Purchases.configure(configuration);
-
-    _isInitialized = true;
-    print('✅ RevenueCat initialized for User ID: $userId');
-  }
-
-  /// Check if the user has an active premium entitlement
-  Future<bool> isPremiumUser() async {
     try {
-      CustomerInfo customerInfo = await Purchases.getCustomerInfo();
-      // 'premium' is the identifier you set in RevenueCat Entitlements
-      return customerInfo.entitlements.all['premium']?.isActive ?? false;
+      if (kDebugMode) {
+        await Purchases.setLogLevel(LogLevel.debug);
+      }
+
+      PurchasesConfiguration configuration = PurchasesConfiguration(_androidApiKey);
+      if (userId != null) {
+        configuration.appUserID = userId;
+      }
+      
+      await Purchases.configure(configuration);
+      _isInitialized = true;
+      debugPrint('✅ RevenueCat Initialized');
     } catch (e) {
-      print('❌ Error checking premium status: $e');
-      return false;
+      debugPrint('❌ RevenueCat Initialization Error: $e');
     }
   }
 
-  /// Trigger the purchase flow for the monthly package
-  Future<bool> purchasePremium() async {
+  /// Fetches the current offering and returns the monthly package.
+  Future<Package?> getMonthlyPackage() async {
+    if (kIsWeb) return null;
     try {
       Offerings offerings = await Purchases.getOfferings();
-      if (offerings.current != null && offerings.current!.availablePackages.isNotEmpty) {
-        // We typically assume the first package is the monthly one for this jam
-        final package = offerings.current!.availablePackages.first;
-        
-        CustomerInfo customerInfo = await Purchases.purchasePackage(package);
-        return customerInfo.entitlements.all['premium']?.isActive ?? false;
+      // "default" is the identifier for your current offering
+      if (offerings.current != null && offerings.current?.monthly != null) {
+        return offerings.current!.monthly;
       }
-      return false;
     } catch (e) {
-      print('❌ Error purchasing premium: $e');
+      debugPrint('❌ Error fetching offerings: $e');
+    }
+    return null;
+  }
+
+  /// Handles the purchase flow for a specific package.
+  Future<bool> purchasePackage(Package package) async {
+    if (kIsWeb) return false;
+    try {
+      CustomerInfo customerInfo = await Purchases.purchasePackage(package);
+      // Check if "CRAVE Pro" entitlement is active after purchase
+      return customerInfo.entitlements.all['CRAVE Pro']?.isActive ?? false;
+    } catch (e) {
+      debugPrint('❌ Purchase Error: $e');
       return false;
     }
   }
-}
-*/
 
-// Temporary stub for RevenueCat service
-class RevenueCatService {
-  static final RevenueCatService _instance = RevenueCatService._internal();
-  factory RevenueCatService() => _instance;
-  RevenueCatService._internal();
-
-  /// Initialize RevenueCat with the Firebase User ID
-  Future<void> init(String userId) async {
-    if (_isInitialized) return;
-
-    // For now, just mark as initialized without actual RevenueCat setup
-    _isInitialized = true;
-    print('✅ RevenueCat stub initialized for User ID: $userId');
-  }
-
+  /// Checks if the user has an active "CRAVE Pro" entitlement.
   Future<bool> isPremiumUser() async {
-    return false; // Always return false for now
+    if (kIsWeb) return false;
+    try {
+      CustomerInfo customerInfo = await Purchases.getCustomerInfo();
+      return customerInfo.entitlements.all['CRAVE Pro']?.isActive ?? false;
+    } catch (e) {
+      debugPrint('❌ Entitlement Check Error: $e');
+      return false;
+    }
   }
 
-  Future<bool> purchasePremium() async {
-    return false; // Always return false for now
+  /// Restores previous purchases.
+  Future<bool> restorePurchases() async {
+    if (kIsWeb) return false;
+    try {
+      CustomerInfo customerInfo = await Purchases.restorePurchases();
+      return customerInfo.entitlements.all['CRAVE Pro']?.isActive ?? false;
+    } catch (e) {
+      debugPrint('❌ Restore Error: $e');
+      return false;
+    }
   }
 }
