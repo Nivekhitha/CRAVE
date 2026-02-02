@@ -22,7 +22,7 @@ dependencies:
   firebase_auth: ^5.1.0
   
   # RevenueCat (MANDATORY)
-  purchases_flutter: ^7.0.0
+  purchases_flutter: ^8.0.0
   
   # Utilities
   uuid: ^4.3.3

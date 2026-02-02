@@ -22,7 +22,20 @@ class JournalScreen extends StatelessWidget {
               ? const JournalDashboard()
               : PaywallView(
                   isLoading: premium.isLoading,
-                  onUnlock: () => premium.unlockPremium(),
+                  onUnlock: () async {
+                    try {
+                      await premium.unlockPremium();
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(e.toString().replaceAll('Exception: ', '')),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
         );
       },
