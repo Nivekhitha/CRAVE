@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../providers/user_provider.dart';
+import '../../services/premium_service.dart';
+import '../../services/firestore_service.dart'; 
+
+// Screens
+import '../discovery/discovery_screen.dart'; 
 import '../grocery/grocery_screen.dart';
 import '../match/match_screen.dart';
 import '../pantry/pantry_screen.dart';
@@ -8,10 +16,13 @@ import '../profile/profile_screen.dart';
 import '../add_recipe/add_recipe_options_screen.dart';
 import '../emotional_cooking/emotional_cooking_screen.dart';
 import '../cooking_journey/cooking_journey_screen.dart';
-import 'package:provider/provider.dart';
-import '../../providers/user_provider.dart';
-import '../../services/premium_service.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
+import '../journal/journal_screen.dart'; 
+
+// New Widgets
+import '../../widgets/home/home_header.dart';
+import '../../widgets/cards/hero_action_card.dart';
+import '../../widgets/cards/recipe_card_horizontal.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize PremiumService when home screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<PremiumService>(context, listen: false).initialize();
     });
@@ -34,16 +44,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = [
     const _HomeView(),
-    const MatchScreen(),
-    const SizedBox(), // Placeholder for Add
-    const GroceryScreen(),
+    const DiscoveryScreen(), 
+    const SizedBox(), 
+    const JournalScreen(), 
     const ProfileScreen(),
   ];
 
   void _onTabTapped(int index) {
     if (index == 2) {
-      Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const AddRecipeOptionsScreen()));
+      _showAddBottomSheet();
       return;
     }
     setState(() {
@@ -51,35 +60,65 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _showAddBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => const AddRecipeOptionsScreen(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        elevation: 10,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Discover'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle, size: 40, color: AppColors.primary),
-              label: ''),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart), label: 'Grocery'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
+      backgroundColor: AppColors.creamWhite,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
-      body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          backgroundColor: AppColors.surface,
+          selectedItemColor: AppColors.freshMint,
+          unselectedItemColor: AppColors.slate,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(LucideIcons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(LucideIcons.compass), 
+              label: 'Discover',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(LucideIcons.plusCircle, size: 32, color: AppColors.warmPeach),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(LucideIcons.bookOpen), 
+              label: 'Journal',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(LucideIcons.user),
+              label: 'Profile',
+            ),
+          ],
         ),
       ),
     );
@@ -89,470 +128,337 @@ class _HomeScreenState extends State<HomeScreen> {
 class _HomeView extends StatelessWidget {
   const _HomeView();
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning ☀️';
-    if (hour < 17) return 'Good Afternoon 🌤️';
-    return 'Good Evening 🌙';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<UserProvider>(builder: (context, userProvider, child) {
       final matches = userProvider.recipeMatches;
-      final topMatch = matches.isNotEmpty ? matches.first : null;
+      final username = userProvider.username ?? 'Chef';
+      const avatarUrl = ''; 
 
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userProvider.username != null
-                              ? '${_getGreeting()}, ${userProvider.username}'
-                              : _getGreeting(),
-                          style: AppTextStyles.titleLarge,
-                        ),
-                        Text('Ready to cook something?',
-                            style: AppTextStyles.bodySmall),
-                      ],
-                    ),
-                  ],
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.notifications_none),
-                  color: AppColors.textPrimary,
-                ),
-              ],
+      return CustomScrollView(
+        slivers: [
+          // Header
+          SliverToBoxAdapter(
+            child: SafeArea(
+              bottom: false,
+              child: HomeHeader(userName: username, avatarUrl: avatarUrl),
             ),
-            const SizedBox(height: 32),
+          ),
 
-            // Today's Suggestion
-            Text('Today\'s Suggestion', style: AppTextStyles.titleMedium),
-            const SizedBox(height: 12),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            if (topMatch != null)
-              _RecipeSuggestionCard(match: topMatch)
-            else
-              _EmptyFridgeCard(onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const PantryScreen()));
-              }),
-
-            const SizedBox(height: 32),
-
-            // Quick Actions
-            Text('Quick Actions', style: AppTextStyles.titleMedium),
-            const SizedBox(height: 12),
-            _QuickActionCard(
-              icon: Icons.mood,
-              title: 'Emotional Foodie',
-              subtitle: 'Cook based on your mood',
-              color: Colors.purple.shade50,
-              iconColor: Colors.purple,
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const EmotionalCookingScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _QuickActionCard(
-              icon: Icons.emoji_events,
-              title: 'Your Journey',
-              subtitle: 'Track streaks & stats',
-              color: Colors.orange.shade50,
-              iconColor: Colors.orange,
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const CookingJourneyScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _QuickActionCard(
-              icon: Icons.kitchen,
-              title: 'Add Fridge Items',
-              subtitle: 'Update your current stock',
-              color: AppColors.surface,
-              onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const PantryScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _QuickActionCard(
-              icon: Icons.menu_book,
-              title: 'Add Recipe',
-              subtitle: 'Save a new meal idea',
-              color: AppColors.surface,
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AddRecipeOptionsScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _QuickActionCard(
-              icon: Icons.shopping_cart,
-              title: 'Grocery List',
-              subtitle: 'Items you need for recipes',
-              color: AppColors.surface,
-              onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const GroceryScreen()));
-              },
-            ),
-            const SizedBox(height: 32),
-
-            // Recent Activity
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Recent Activity', style: AppTextStyles.titleMedium),
-                Text('See All',
-                    style: AppTextStyles.labelMedium
-                        .copyWith(color: AppColors.primary)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+          // Vertical Hero Actions
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  HeroActionCard(
+                    title: 'Upload Cookbook',
+                    subtitle: 'Extract recipes from PDF',
+                    icon: LucideIcons.fileText,
+                    gradient: AppColors.freshStart,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 12),
+                  HeroActionCard(
+                    title: 'Instagram',
+                    subtitle: 'Save from Reels',
+                    icon: LucideIcons.instagram,
+                    gradient: AppColors.magicHour,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 12),
+                  HeroActionCard(
+                    title: 'Mood Cooking',
+                    subtitle: 'Cook by emotion',
+                    icon: LucideIcons.smile,
+                    gradient: AppColors.goldenHour,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const EmotionalCookingScreen()));
+                    },
                   ),
                 ],
               ),
-              child: const Column(
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+          // Today's Picks
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _ActivityItem(
-                      text: 'Cooked Spicy Ramen yesterday',
-                      color: AppColors.primary),
-                  SizedBox(height: 12),
-                  _ActivityItem(
-                      text: 'Milk expires in 2 days', color: Colors.orange),
+                  Text('Today\'s Picks', style: AppTextStyles.headlineMedium),
+                  if (matches.isNotEmpty)
+                     Text('${matches.length} matches', style: AppTextStyles.labelSmall),
                 ],
               ),
             ),
-            const SizedBox(height: 80), // Bottom padding for nav bar
-          ],
-        ),
+          ),
+          
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 250,
+              child: matches.isEmpty 
+              ? _buildEmptyMatchState(context, userProvider)
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: matches.length > 5 ? 5 : matches.length,
+                  itemBuilder: (context, index) {
+                    final match = matches[index];
+                    final recipe = match.recipe;
+                    return RecipeCardHorizontal(
+                      title: recipe.title,
+                      imageUrl: "https://source.unsplash.com/random/800x600/?food,${recipe.title.replaceAll(' ', ',')}", 
+                      time: "${recipe.cookTime}m",
+                      calories: "350 kcal", 
+                      matchPercentage: match.matchPercentage.round(),
+                      onTap: () {
+                         Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: recipe)));
+                      },
+                    );
+                  },
+                ),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+          // From Your Fridge
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('From Your Fridge', style: AppTextStyles.headlineMedium),
+                  if (userProvider.pantryList.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen()));
+                      },
+                      child: Text('See All', style: AppTextStyles.labelMedium.copyWith(color: AppColors.freshMint)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // Fridge Items List
+          SliverToBoxAdapter(
+             child: SizedBox(
+              height: 100,
+              child: userProvider.pantryList.isEmpty
+                ? ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    children: [
+                       _buildAddFridgeItem(context),
+                    ],
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: (userProvider.pantryList.length > 5 ? 5 : userProvider.pantryList.length) + 1,
+                    itemBuilder: (context, index) {
+                      if (index == (userProvider.pantryList.length > 5 ? 5 : userProvider.pantryList.length)) {
+                        return _buildAddFridgeItem(context);
+                      }
+                      
+                      final item = userProvider.pantryList[index];
+                      // Use safety checks for types
+                      final name = item['name'] ?? 'Ingredient';
+                      // Handle quantity which might be int or String
+                      final rawQty = item['quantity'];
+                      String qtyDisplay = '1';
+                      if (rawQty != null) {
+                        qtyDisplay = rawQty.toString();
+                      }
+                      
+                      return _buildFridgeItem(name, qtyDisplay);
+                    },
+                  ),
+             ),
+          ),
+          
+          const SliverToBoxAdapter(child: SizedBox(height: 100)), // Bottom Padding
+        ],
       );
     });
   }
-}
 
-class _RecipeSuggestionCard extends StatelessWidget {
-  final dynamic match;
+  Widget _buildEmptyMatchState(BuildContext context, UserProvider provider) {
+      if (provider.pantryList.isEmpty) {
+        return _buildEmptyStateCard(
+          context, 
+          "Your Fridge is Empty", 
+          "Add ingredients to get suggestions",
+          "Go to Pantry",
+          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen())),
+        );
+      }
+      
+      // If pantry has items but no matches, likely needs recipes
+      return _buildEmptyStateCard(
+        context,
+        "No Matching Recipes",
+        "We couldn't match your ingredients to any recipes.",
+        "See All Recipes", 
+        () {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Try adding more varied ingredients!')));
+        },
+        secondaryAction: TextButton.icon(
+          onPressed: () {
+             _seedDummyRecipes(context);
+          }, 
+          icon: const Icon(LucideIcons.database),
+          label: const Text("Debug: Add Dummy Recipes"),
+        ),
+      );
+  }
 
-  const _RecipeSuggestionCard({required this.match});
+  Widget _buildEmptyStateCard(
+    BuildContext context, 
+    String title, 
+    String subtitle, 
+    String btnText, 
+    VoidCallback onBtnTap,
+    {Widget? secondaryAction}
+  ) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.slate.withOpacity(0.1)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.chefHat, size: 48, color: AppColors.primary.withOpacity(0.5)),
+            const SizedBox(height: 16),
+            Text(title, style: AppTextStyles.titleMedium),
+            const SizedBox(height: 4),
+            Text(subtitle, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+             ElevatedButton(
+                onPressed: onBtnTap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent, 
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                child: Text(btnText),
+             ),
+             if (secondaryAction != null) ...[
+               const SizedBox(height: 8),
+               secondaryAction,
+             ]
+          ],
+        ),
+      );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    final recipe = match.recipe;
-    final percentage = match.matchPercentage.round();
+  void _seedDummyRecipes(BuildContext context) {
+    // Quick seeder for MVP testing
+    final mockRecipes = [
+      {
+        'title': 'Tomato Omelette',
+        'ingredients': ['Eggs', 'Tomatoes', 'Salt', 'Pepper'],
+        'cookTime': 10,
+        'difficulty': 'Easy',
+        'source': 'manual'
+      },
+      {
+        'title': 'Cheese Sandwich',
+        'ingredients': ['Bread', 'Cheese', 'Butter'],
+        'cookTime': 5,
+        'difficulty': 'Easy',
+        'source': 'manual'
+      },
+      {
+        'title': 'Pancakes',
+        'ingredients': ['Milk', 'Flour', 'Eggs', 'Sugar'],
+        'cookTime': 20,
+        'difficulty': 'Medium',
+        'source': 'manual'
+      }
+    ];
 
+    int added = 0;
+    for (var r in mockRecipes) {
+       FirestoreService().saveRecipe(r);
+       added++;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added $added recipes! Restart app to sync.')));
+  }
+
+  Widget _buildFridgeItem(String name, String quantity) {
     return Container(
-      width: double.infinity,
+      width: 100,
+      margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+         border: Border.all(color: AppColors.slate.withOpacity(0.1)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Image placeholder
           Container(
-            height: 180,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Icon(
-                    Icons.restaurant_menu,
-                    color: AppColors.primary,
-                    size: 60,
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _getMatchColor(percentage),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '$percentage% Match with your fridge',
-                      style: AppTextStyles.labelSmall
-                          .copyWith(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+             padding: const EdgeInsets.all(8),
+             decoration: const BoxDecoration(
+               color: AppColors.wash,
+               shape: BoxShape.circle,
+             ),
+             child: const Icon(LucideIcons.carrot, color: AppColors.warmPeach, size: 20),
           ),
+          const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'What can I cook today?',
-                  style: AppTextStyles.titleMedium
-                      .copyWith(color: AppColors.textPrimary),
-                ),
-                Text(
-                  recipe.title,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.primary),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.timer, color: Colors.grey, size: 16),
-                        const SizedBox(width: 4),
-                        Text('${recipe.cookTime} m',
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: Colors.grey)),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.bolt, color: Colors.grey, size: 16),
-                        const SizedBox(width: 4),
-                        Text('Easy',
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: Colors.grey)),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) =>
-                                    RecipeDetailScreen(recipe: recipe)));
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.onPrimary,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                      ),
-                      child: Text('View Recipe',
-                          style: AppTextStyles.labelMedium
-                              .copyWith(color: Colors.white)),
-                    ),
-                  ],
-                ),
-              ],
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              name, 
+              style: AppTextStyles.labelMedium,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ),
+          Text('$quantity items', style: AppTextStyles.bodySmall),
         ],
       ),
     );
   }
 
-  Color _getMatchColor(int percentage) {
-    if (percentage >= 80) return AppColors.primary;
-    if (percentage >= 50) return Colors.orange;
-    return Colors.grey;
-  }
-}
-
-class _EmptyFridgeCard extends StatelessWidget {
-  final VoidCallback onTap;
-  const _EmptyFridgeCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+  Widget _buildAddFridgeItem(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen())),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        width: 80,
+        margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.freshMint.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.3), width: 1),
+          border: Border.all(color: AppColors.freshMint.withOpacity(0.3)),
         ),
-        child: Row(
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle),
-              child:
-                  const Icon(Icons.kitchen, color: AppColors.primary, size: 30),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Your Fridge is Empty!",
-                      style: AppTextStyles.labelLarge),
-                  Text("Add ingredients to get suggestions.",
-                      style: AppTextStyles.bodySmall),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+             Icon(LucideIcons.plus, color: AppColors.freshMint),
+             SizedBox(height: 4),
+             Text("Add", style: TextStyle(color: AppColors.freshMint, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _QuickActionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final Color? iconColor;
-  final VoidCallback onTap;
-
-  const _QuickActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-    this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color:
-                        (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: iconColor ?? AppColors.primary),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style: AppTextStyles.labelLarge
-                              .copyWith(color: AppColors.textPrimary)),
-                      Text(subtitle,
-                          style: AppTextStyles.bodySmall
-                              .copyWith(color: AppColors.textSecondary)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.grey),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActivityItem extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const _ActivityItem({required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 12),
-        Text(text,
-            style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.textPrimary)),
-      ],
     );
   }
 }

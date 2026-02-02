@@ -4,7 +4,8 @@ import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 import '../../providers/user_provider.dart';
-import '../../services/recipe_matching_service.dart';
+import '../../services/recipe_ai_service.dart';
+import '../../models/recipe.dart';
 
 class EmotionalCookingScreen extends StatefulWidget {
   const EmotionalCookingScreen({super.key});
@@ -15,66 +16,86 @@ class EmotionalCookingScreen extends StatefulWidget {
 
 class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
   String _selectedMood = 'Tired'; 
+  bool _isLoading = false;
+  List<Recipe> _aiRecipes = [];
+  final RecipeAiService _aiService = RecipeAiService();
+  String? _errorMessage;
 
   final List<Map<String, dynamic>> _moods = [
     {'name': 'Tired', 'subtitle': 'Quick & Easy', 'icon': Icons.battery_charging_full, 'color': Colors.blueAccent},
-    {'name': 'Homesick', 'subtitle': 'Comfort Food', 'icon': Icons.home, 'color': Colors.orangeAccent},
-    {'name': 'Motivated', 'subtitle': 'Healthy & Fresh', 'icon': Icons.fitness_center, 'color': Colors.green},
-    {'name': 'Happy', 'subtitle': 'Sweet & fun', 'icon': Icons.sentiment_very_satisfied, 'color': Colors.amber},
+    {'name': 'Sad', 'subtitle': 'Comfort Food', 'icon': Icons.home, 'color': Colors.orangeAccent}, // Changed Homesick to Sad to match prompt
+    {'name': 'Happy', 'subtitle': 'Fun & Light', 'icon': Icons.sentiment_very_satisfied, 'color': Colors.amber},
+    {'name': 'Romantic', 'subtitle': 'Cozy & Date Night', 'icon': Icons.favorite, 'color': Colors.pinkAccent},
+     // Kept Motivated but mapped to Happy/Healthy logic if needed, or user can expand
   ];
+
+  bool _isGenerating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch initial suggestions after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchRecipesForMood();
+    });
+  }
 
   String get _sectionTitle {
     switch (_selectedMood) {
       case 'Tired': return 'Low Effort, High Reward';
-      case 'Homesick': return 'Comfort Food for You';
-      case 'Motivated': return 'Fuel Your Body';
+      case 'Sad': return 'Comfort Food for You';
       case 'Happy': return 'Treat Yourself';
+      case 'Romantic': return 'Date Night Ideas';
       default: return 'Suggestions';
     }
   }
 
-  // Filter Logic
-  List<RecipeMatch> _getFilteredMatches(UserProvider provider) {
-    // 1. Get all matches (already sorted by availability)
-    final allMatches = provider.recipeMatches;
-    
-    // 2. Filter by Mood
-    return allMatches.where((match) {
-      final r = match.recipe;
-      final tags = r.tags?.map((e) => e.toLowerCase()).toList() ?? [];
-      final title = r.title.toLowerCase();
+  Future<void> _fetchRecipesForMood() async {
+    // Prevent double taps
+    if (_isGenerating) return;
 
-      switch (_selectedMood) {
-        case 'Tired':
-          // Quick, Easy, < 25 mins
-          return (r.totalTime != null && r.totalTime! <= 25) || 
-                 tags.contains('quick') || 
-                 tags.contains('easy');
-        case 'Homesick':
-          // Comfort, Soup, Warm
-          return tags.contains('comfort food') || 
-                 tags.contains('soup') || 
-                 title.contains('soup') || 
-                 title.contains('stew') ||
-                 tags.contains('warm');
-        case 'Motivated':
-          // Healthy, Vegetarian, maybe harder ones?
-          return tags.contains('healthy') || 
-                 tags.contains('salad') || 
-                 tags.contains('vegan') ||
-                 tags.contains('vegetarian') ||
-                 title.contains('salad');
-        case 'Happy':
-          // Dessert, Fun, Party
-          return tags.contains('dessert') || 
-                 tags.contains('sweet') || 
-                 tags.contains('party') ||
-                 title.contains('cake') ||
-                 title.contains('cookie');
-        default:
-          return true;
+    final provider = Provider.of<UserProvider>(context, listen: false);
+    final ingredients = provider.pantryList.map((e) => e['name'].toString()).toList();
+
+    if (ingredients.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _aiRecipes = [];
+          _errorMessage = "Your fridge is empty! Add some items first.";
+        });
       }
-    }).toList();
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _isGenerating = true; // Set lock
+      _errorMessage = null;
+    });
+
+    try {
+      final recipes = await _aiService.suggestRecipesByMood(_selectedMood, ingredients);
+      if (mounted) {
+        setState(() {
+          _aiRecipes = recipes;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Could not fetch recipes. Check your connection.";
+          debugPrint("Error fetching mood recipes: $e");
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+           _isGenerating = false; // Release lock
+        });
+      }
+    }
   }
 
   @override
@@ -91,8 +112,7 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
       ),
       body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
-          final suggestions = _getFilteredMatches(userProvider);
-
+          
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -105,7 +125,7 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Choose a mood, and we\'ll suggest recipes based on what you have.',
+                  'Choose a mood, and we\'ll suggest recipes based on your fridge.',
                   style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 32),
@@ -126,54 +146,64 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                     final isSelected = _selectedMood == mood['name'];
                     
                     return GestureDetector(
-                      onTap: () => setState(() => _selectedMood = mood['name']),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected ? mood['color'] : AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: isSelected ? null : Border.all(color: Colors.grey.shade200),
-                          boxShadow: [
-                            if (isSelected)
-                              BoxShadow(
-                                color: (mood['color'] as Color).withOpacity(0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              )
-                            else
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              )
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              mood['icon'], 
-                              color: isSelected ? Colors.white : mood['color'],
-                              size: 32,
-                            ),
-                            const Spacer(),
-                            Text(
-                              mood['name'],
-                              style: AppTextStyles.titleMedium.copyWith(
-                                color: isSelected ? Colors.white : AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
+                      onTap: _isGenerating ? null : () { // Disable tap if generating
+                        setState(() {
+                          _selectedMood = mood['name'];
+                        });
+                        _fetchRecipesForMood();
+                      },
+                      child: Opacity( // Visually indicate disabled state
+                        opacity: _isGenerating && !isSelected ? 0.5 : 1.0, 
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isSelected ? mood['color'] : AppColors.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: isSelected ? null : Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              if (isSelected)
+                                BoxShadow(
+                                  color: (mood['color'] as Color).withOpacity(0.4),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                )
+                              else
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                )
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                mood['icon'], 
+                                color: isSelected ? Colors.white : mood['color'],
+                                size: 32,
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              mood['subtitle'],
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: isSelected ? Colors.white.withOpacity(0.9) : AppColors.textSecondary,
+                              const Spacer(),
+                              Text(
+                                mood['name'],
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                mood['subtitle'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: isSelected ? Colors.white.withOpacity(0.9) : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -193,17 +223,33 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                         style: AppTextStyles.titleLarge,
                       ),
                     ),
-                    if (suggestions.isNotEmpty)
-                      Text(
-                        '${suggestions.length} matches', 
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                      ),
                   ],
                 ),
                 const SizedBox(height: 16),
 
-                suggestions.isEmpty
-                    ? Container(
+                if (_isLoading)
+                  const Center(child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ))
+                else if (_errorMessage != null)
+                   Container(
+                        padding: const EdgeInsets.all(32),
+                        alignment: Alignment.center,
+                        child: Column(
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: Colors.grey.shade300),
+                            const SizedBox(height: 16),
+                            Text(
+                              _errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      )
+                else if (_aiRecipes.isEmpty)
+                    Container(
                         padding: const EdgeInsets.all(32),
                         alignment: Alignment.center,
                         child: Column(
@@ -211,32 +257,33 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                             Icon(Icons.soup_kitchen_outlined, size: 48, color: Colors.grey.shade300),
                             const SizedBox(height: 16),
                             Text(
-                              "No recipes found for this mood with your current ingredients.",
+                              "No matching recipes found for this mood.",
                               textAlign: TextAlign.center,
                               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                             ),
                           ],
                         ),
                       )
-                    : SizedBox(
+                else
+                    SizedBox(
                         height: 250,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: suggestions.length,
+                          itemCount: _aiRecipes.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 16),
                           itemBuilder: (context, index) {
-                            final match = suggestions[index];
-                            final recipe = match.recipe;
-                            final hasIngredients = match.matchPercentage > 0;
-
+                            final recipe = _aiRecipes[index];
+                    
                             return GestureDetector(
                               onTap: () {
+                                // Since these are AI-generated dynamic recipes, 
+                                // they are complete objects. We can pass them directly.
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeDetailScreen(
                                   recipe: recipe
                                 )));
                               },
                               child: Container(
-                                width: 180,
+                                width: 200,
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(20),
@@ -253,45 +300,22 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                                   children: [
                                     Expanded(
                                       flex: 3,
-                                      child: Hero(
-                                        tag: 'mood_${recipe.id}',
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                                            image: DecorationImage(
-                                              image: recipe.imageUrl != null && recipe.imageUrl!.startsWith('http')
-                                                ? NetworkImage(recipe.imageUrl!)
-                                                : AssetImage(recipe.imageUrl ?? 'assets/images/placeholder_food.png') as ImageProvider,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                          child: hasIngredients 
-                                            ? Align(
-                                                alignment: Alignment.topRight,
-                                                child: Container(
-                                                  margin: const EdgeInsets.all(8),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Text(
-                                                    '${match.matchPercentage.toInt()}% Match',
-                                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                                  ),
-                                                ),
-                                              ) 
-                                            : null,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                          color: Colors.grey.shade200,
+                                        ),
+                                        child: Center(
+                                          child: Icon(Icons.restaurant, size: 40, color: Colors.grey.shade400),
                                         ),
                                       ),
                                     ),
                                     Expanded(
-                                      flex: 2,
+                                      flex: 4, // More space for description
                                       child: Padding(
                                         padding: const EdgeInsets.all(12.0),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
                                               recipe.title,
@@ -299,12 +323,28 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                             ),
+                                            const SizedBox(height: 4),
+                                            if (recipe.description != null)
+                                              Text(
+                                                recipe.description!,
+                                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary, fontSize: 11),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            const Spacer(),
                                             Row(
                                               children: [
                                                 Icon(Icons.schedule, size: 14, color: AppColors.textSecondary),
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   '${recipe.totalTime ?? 25} min',
+                                                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Icon(Icons.speed, size: 14, color: AppColors.textSecondary),
+                                                 const SizedBox(width: 4),
+                                                Text(
+                                                  recipe.difficulty ?? 'Easy',
                                                   style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
                                                 ),
                                               ],

@@ -6,6 +6,7 @@ import '../utils/exceptions.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final AuthService _auth = AuthService();
+  FirebaseFirestore get db => _db;
 
   // Singleton
   static final FirestoreService _instance = FirestoreService._internal();

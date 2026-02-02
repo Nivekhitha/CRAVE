@@ -17,8 +17,8 @@ class RecipeAiService {
       throw Exception('Gemini API Key is missing. Please check your .env file.');
     }
 
-    // Try available models in order of preference
-    final models = ['gemini-pro'];
+    // Try available models in order of preference: standard flash first for speed/stability
+    final models = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-1.5-pro'];
     
     Exception? lastError;
     for (final model in models) {
@@ -38,13 +38,13 @@ class RecipeAiService {
 
   Future<List<Recipe>> _tryGenerate(String key, String modelName, String text) async {
     final model = GenerativeModel(
-      model: modelName, 
+      model: modelName,
       apiKey: key,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
-        temperature: 0.3, 
-      )
+      ),
     );
+
 
     // Truncate text if too long 
     final maxLength = 100000;
@@ -151,5 +151,74 @@ $truncatedText
       return input.join('\n');
     }
     return input.toString();
+  }
+
+  /// Suggest recipes key on mood and ingredients
+  Future<List<Recipe>> suggestRecipesByMood(String emotion, List<String> fridgeItems) async {
+    final key = _apiKey;
+    if (key == null || key.isEmpty) {
+      throw Exception('Gemini API Key is missing. Please check your .env file.');
+    }
+
+    final model = GenerativeModel(
+      model: 'gemini-2.5-flash',
+      apiKey: key,
+      generationConfig: GenerationConfig(
+        responseMimeType: 'application/json',
+        temperature: 0.7, // Higher temp for creativity
+      ),
+    );
+
+    final prompt = '''
+You are a mood-based cooking assistant.
+
+User emotion: $emotion
+Available fridge ingredients: ${fridgeItems.join(', ')}
+
+Suggest 2–3 recipes that:
+- Match the user’s emotion
+- Mainly use the provided ingredients
+- Allow at most 2 extra common items (salt/oil/water are free)
+
+Return ONLY valid JSON:
+{
+  "recipes": [
+    {
+      "title": "string",
+      "whyThisFitsMood": "short explanation",
+      "ingredients": ["ingredient with quantity"],
+      "instructions": ["step 1", "step 2"],
+      "estimatedTime": number,
+      "difficulty": "Easy|Medium|Hard"
+    }
+  ]
+}
+
+Rules:
+- No markdown
+- No text outside JSON
+- Comfort food for Sad/Stressed
+- Quick meals for Tired
+- Fun/light meals for Happy
+- Cozy meals for Romantic
+- If ingredients insufficient, return {"recipes":[]}
+''';
+
+    try {
+      debugPrint("🎭 Suggesting recipes for mood: $emotion");
+      final response = await model.generateContent([Content.text(prompt)]);
+      
+      if (response.text == null || response.text!.isEmpty) {
+        throw Exception('AI returned empty response.');
+      }
+
+      final recipes = parseRecipesFromJson(response.text!);
+      return recipes;
+
+    } catch (e) {
+      debugPrint("❌ Mood Recipe Error: $e");
+       // Pass through the exception message cleanly
+       throw Exception(e.toString().replaceAll('Exception:', '').trim());
+    }
   }
 }

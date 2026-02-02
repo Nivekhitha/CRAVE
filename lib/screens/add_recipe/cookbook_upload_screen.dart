@@ -16,11 +16,13 @@ class CookbookUploadScreen extends StatefulWidget {
 
 class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
   final CookbookExtractionService _extractionService = CookbookExtractionService();
-  bool _isUploading = false;
+  bool _isExtracting = false;
   String _statusMessage = '';
   double? _progressValue;
 
   Future<void> _pickAndProcessFile() async {
+    if (_isExtracting) return;
+
     try {
       // 1. Pick PDF
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -43,7 +45,7 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
       }
 
       setState(() {
-        _isUploading = true;
+        _isExtracting = true;
         _statusMessage = 'Reading PDF file...';
         _progressValue = 0.2;
       });
@@ -70,7 +72,6 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
       if (recipes.isEmpty) {
         setState(() {
           _statusMessage = 'Analysis Complete';
-          _isUploading = false;
         });
         _showErrorDialog(
           "No recipes found in this PDF.\n\n"
@@ -107,7 +108,6 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
       if (!mounted) return;
       
       setState(() {
-        _isUploading = false;
         _statusMessage = '';
         _progressValue = null;
       });
@@ -119,6 +119,12 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
       }
       
       _showErrorDialog(errorMsg);
+    } finally {
+       if (mounted) {
+         setState(() {
+           _isExtracting = false;
+         });
+       }
     }
   }
 
@@ -155,7 +161,7 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_isUploading) ...[
+            if (_isExtracting) ...[
               const Spacer(),
                Center(
                  child: Column(
@@ -257,20 +263,20 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
               const SizedBox(height: 24),
 
               ElevatedButton.icon(
-                onPressed: _pickAndProcessFile,
+                onPressed: _isExtracting ? null : _pickAndProcessFile,
                 icon: const Icon(Icons.upload_file),
-                label: const Text('Select PDF Cookbook'),
+                label: Text(_isExtracting ? 'Extracting...' : 'Select PDF Cookbook'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  disabledBackgroundColor: Colors.grey.shade400,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   textStyle: AppTextStyles.labelLarge
                 ),
               ),
-              const SizedBox(height: 16),
-            ]
-          ],
+             ],
+            ],
         ),
       ),
     );

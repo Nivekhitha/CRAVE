@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../services/video_recipe_service.dart';
+import '../../services/url_recipe_extraction_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/premium_service.dart';
@@ -26,6 +27,7 @@ class VideoRecipeInputScreen extends StatefulWidget {
 class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
   final TextEditingController _urlController = TextEditingController();
   final VideoRecipeService _videoService = VideoRecipeService();
+  final UrlRecipeExtractionService _instagramService = UrlRecipeExtractionService();
   final FirestoreService _firestore = FirestoreService();
   final AuthService _auth = AuthService();
 
@@ -63,7 +65,7 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
   Future<void> _checkAndExtract() async {
     final url = _urlController.text.trim();
     if (url.isEmpty) {
-      _showError('Please enter a YouTube URL');
+      _showError('Please enter a URL');
       return;
     }
 
@@ -115,19 +117,37 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
     });
 
     try {
-      final recipeData = await _videoService.extractFromYouTube(url);
+      Map<String, dynamic> recipeData;
 
-      if (recipeData == null) {
-        throw Exception('Failed to extract recipe from video.');
+      if (url.contains('instagram.com')) {
+         // Instagram Extraction
+         final recipes = await _instagramService.extractFromInstagram(url);
+         if (recipes.isEmpty) {
+           throw Exception('No recipes found in this post.');
+         }
+         // For MVP, just take the first one
+         // TODO: Show selection dialog if > 1
+         recipeData = recipes.first.toMap();
+      } else {
+         // YouTube Extraction (Default)
+         final result = await _videoService.extractFromYouTube(url);
+         if (result == null) throw Exception('Failed to extract from YouTube.');
+         recipeData = result;
       }
 
       // Populate editable fields
       _titleController.text = recipeData['title'] ?? '';
       _descriptionController.text = recipeData['description'] ?? '';
+      
+      // Handle int/string flexible parsing
       _servingsController.text = recipeData['servings']?.toString() ?? '';
       _prepTimeController.text = recipeData['prepTime']?.toString() ?? '';
       _cookTimeController.text = recipeData['cookTime']?.toString() ?? '';
+      
       _selectedDifficulty = recipeData['difficulty'] ?? 'Medium';
+      if (!['Easy', 'Medium', 'Hard'].contains(_selectedDifficulty)) {
+        _selectedDifficulty = 'Medium';
+      }
 
       // Clear existing controllers
       for (var controller in _ingredientControllers) {
@@ -140,17 +160,32 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
       _instructionControllers.clear();
 
       // Populate ingredients
-      final ingredients = recipeData['ingredients'] as List<dynamic>? ?? [];
-      for (var ingredient in ingredients) {
-        final controller = TextEditingController(text: ingredient.toString());
-        _ingredientControllers.add(controller);
+      final ingredients = recipeData['ingredients'];
+      if (ingredients is List) {
+        for (var ingredient in ingredients) {
+          final controller = TextEditingController(text: ingredient.toString());
+          _ingredientControllers.add(controller);
+        }
+      } else if (ingredients is String) {
+         // Handle string case just in case
+         _ingredientControllers.add(TextEditingController(text: ingredients));
       }
 
       // Populate instructions
-      final instructions = recipeData['instructions'] as List<dynamic>? ?? [];
-      for (var instruction in instructions) {
-        final controller = TextEditingController(text: instruction.toString());
-        _instructionControllers.add(controller);
+      final instructions = recipeData['instructions'];
+      if (instructions is List) {
+        for (var instruction in instructions) {
+          final controller = TextEditingController(text: instruction.toString());
+          _instructionControllers.add(controller);
+        }
+      } else if (instructions is String) {
+         // Handle newline separated string
+         final split = instructions.split('\n');
+         for (var s in split) {
+           if (s.trim().isNotEmpty) {
+             _instructionControllers.add(TextEditingController(text: s.trim()));
+           }
+         }
       }
 
       if (!mounted) return;
@@ -337,13 +372,13 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
           ),
           const SizedBox(height: 32),
           Text(
-            'Extract Recipe from YouTube',
+            'Extract Recipe from Video',
             style: AppTextStyles.headlineMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Text(
-            'Paste a YouTube cooking video URL and our AI will extract the recipe for you.',
+            'Paste a YouTube video or Instagram Reel link and our AI will extract the recipe for you.',
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -351,7 +386,7 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
           TextField(
             controller: _urlController,
             decoration: InputDecoration(
-              hintText: 'https://youtube.com/watch?v=...',
+              hintText: 'https://youtube.com/... or https://instagram.com/...',
               prefixIcon: const Icon(Icons.link, color: AppColors.textSecondary),
               filled: true,
               fillColor: AppColors.surface,
