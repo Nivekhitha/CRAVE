@@ -6,7 +6,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 /// Designed for the CRAVE competition demo.
 class RevenueCatService {
   // TODO: Replace with your actual Public API Key from RevenueCat Dashboard
-  static const _androidApiKey = 'sk_iROILcbzCyhtncYZoSKgwqjQAoyXx';
+  static const _androidApiKey = 'goog_enfahxXZMWZpQLwdfVyPsWTGASG';
 
   static final RevenueCatService _instance = RevenueCatService._internal();
   factory RevenueCatService() => _instance;
