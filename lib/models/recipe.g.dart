@@ -33,13 +33,23 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       cookCount: fields[13] as int,
       tags: (fields[14] as List?)?.cast<String>(),
       difficulty: fields[15] as String?,
+      calories: fields[16] as double?,
+      protein: fields[17] as double?,
+      carbs: fields[18] as double?,
+      fats: fields[19] as double?,
+      fiber: fields[20] as double?,
+      sugar: fields[21] as double?,
+      sodium: fields[22] as double?,
+      vitamins: (fields[23] as Map?)?.cast<String, double>(),
+      minerals: (fields[24] as Map?)?.cast<String, double>(),
+      glycemicIndex: fields[25] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Recipe obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -71,7 +81,27 @@ class RecipeAdapter extends TypeAdapter<Recipe> {
       ..writeByte(14)
       ..write(obj.tags)
       ..writeByte(15)
-      ..write(obj.difficulty);
+      ..write(obj.difficulty)
+      ..writeByte(16)
+      ..write(obj.calories)
+      ..writeByte(17)
+      ..write(obj.protein)
+      ..writeByte(18)
+      ..write(obj.carbs)
+      ..writeByte(19)
+      ..write(obj.fats)
+      ..writeByte(20)
+      ..write(obj.fiber)
+      ..writeByte(21)
+      ..write(obj.sugar)
+      ..writeByte(22)
+      ..write(obj.sodium)
+      ..writeByte(23)
+      ..write(obj.vitamins)
+      ..writeByte(24)
+      ..write(obj.minerals)
+      ..writeByte(25)
+      ..write(obj.glycemicIndex);
   }
 
   @override

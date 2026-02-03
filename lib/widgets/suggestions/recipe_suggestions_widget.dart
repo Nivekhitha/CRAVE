@@ -32,7 +32,14 @@ class RecipeSuggestionsWidget extends StatelessWidget {
         // Get suggestions based on filter
         List<RecipeMatch> suggestions;
         if (filterMealType != null) {
-          suggestions = userProvider.getSuggestionsForMeal(filterMealType!);
+          suggestions = userProvider.getSuggestionsForMeal(filterMealType!)
+          .map((recipe) => RecipeMatch(
+            recipe: recipe, 
+            matchPercentage: 85,
+            missingIngredients: [],
+            matchingIngredientCount: recipe.ingredients.length,
+          ))
+          .toList();
         } else {
           suggestions = userProvider.recipeMatches;
         }
@@ -236,9 +243,8 @@ class RecipeSuggestionsWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            ...oneIngredientAway.take(2).map((item) {
-              final recipe = item['recipe'];
-              final missing = item['missingIngredient'];
+            ...oneIngredientAway.take(2).map((recipe) {
+              final missing = 'One ingredient away'; // Placeholder
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),

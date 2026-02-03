@@ -80,7 +80,7 @@ class MealPlan extends HiveObject {
   bool get hasDinner => meals.any((meal) => meal.mealType == MealType.dinner);
   bool get hasSnack => meals.any((meal) => meal.mealType == MealType.snack);
 
-  int get totalCalories => meals.fold<int>(0, (sum, meal) => sum + (meal.recipe?.calories ?? 0));
+  int get totalCalories => meals.fold<int>(0, (sum, meal) => sum + ((meal.recipe?.calories ?? 0).toInt()));
   int get totalCookTime => meals.fold<int>(0, (sum, meal) => sum + (meal.recipe?.cookTime ?? 0));
 
   List<String> get allIngredients {

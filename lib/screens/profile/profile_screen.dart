@@ -1,267 +1,713 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
-import '../../app/routes.dart';
-import '../../services/seed_data_service.dart';
-
-import 'package:provider/provider.dart';
-import '../../services/image_service.dart';
 import '../../services/premium_service.dart';
-import '../../providers/user_provider.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/premium/paywall_view.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          final username = userProvider.username ?? 'Guest';
-          final email = userProvider.user?.email ?? 'No email';
-          final avatarUrl = ImageService().getUserAvatarUrl(username);
-          
-          return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  // Avatar
-                  Center(
-                    child: Stack(
-                      children: [
-                         CircleAvatar(
-                          radius: 60,
-                          backgroundImage: NetworkImage(avatarUrl),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.edit, color: Colors.white, size: 20),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(username, style: AppTextStyles.headlineMedium),
-                      if (Provider.of<PremiumService>(context).isPremium) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.magicHour,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text('PRO', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                        )
-                      ]
-                    ],
-                  ),
-                  Text(email, style: AppTextStyles.bodyMedium),
-                  
-                  const SizedBox(height: 24),
-
-                  // Stats Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildStatColumn('🔥', '${userProvider.cookingStreak} Day', 'Strom'),
-                      _buildContainerDivider(),
-                      _buildStatColumn('🍳', '${userProvider.recipesCooked}', 'Cooked'),
-                      _buildContainerDivider(),
-                      _buildStatColumn('📝', '12', 'Logged'), // Mock 'Logged' for now
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Upgrade Banner
-                  if (!Provider.of<PremiumService>(context).isPremium)
-                    GestureDetector(
-                      onTap: () {
-                         // Trigger paywall via premium gate or direct navigation
-                         // For now, simple snackbar or navigate to Journal (which is gated)
-                         // Or better, show Paywall modal directly
-                         showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => PaywallView(
-                               onUnlock: () async {
-                                  try {
-                                     await Provider.of<PremiumService>(context, listen: false).unlockPremium();
-                                     Navigator.pop(context);
-                                  } catch (e) {
-                                     // Error handled in service
-                                  }
-                               },
-                               isLoading: Provider.of<PremiumService>(context).isLoading,
-                            )
-                         );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.magicHour,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                             BoxShadow(color: AppColors.accent.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))
-                          ]
-                        ),
-                        child: Row(
-                          children: [
-                             Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                                child: const Icon(Icons.star, color: Colors.white),
-                             ),
-                             const SizedBox(width: 16),
-                             const Expanded(
-                                child: Column(
-                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                   children: [
-                                      Text("Upgrade to Premium", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                      Text("Unlock AI Dietitian & unlimited recipes", style: TextStyle(color: Colors.white70, fontSize: 12))
-                                   ],
-                                ),
-                             ),
-                             const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16)
-                          ],
-                        ),
-                      ),
-                    ),
-                  
-                  const SizedBox(height: 32),
-
-              // Menu Options
-              _ProfileOption(icon: Icons.person_outline, title: 'My Account', onTap: () {}),
-              _ProfileOption(icon: Icons.favorite_border, title: 'Saved Recipes', onTap: () {}),
-              _ProfileOption(icon: Icons.settings_outlined, title: 'Settings', onTap: () {}),
-              _ProfileOption(icon: Icons.help_outline, title: 'Help & Support', onTap: () {}),
-              _ProfileOption(
-                icon: Icons.logout,
-                title: 'Log Out',
-                onTap: () {
-                  Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
-                },
-                textColor: AppColors.error,
-                iconColor: AppColors.error,
-              ),
-
-              const SizedBox(height: 32),
-              // Developer Options
-              Text('Developer Options', style: AppTextStyles.labelLarge),
-              const SizedBox(height: 12),
-              _ProfileOption(
-                icon: Icons.cloud_upload_outlined,
-                title: 'Seed Recipes (Dev Only)',
-                onTap: () async {
-                  try {
-                     // Lazy import logic or direct usage if service file is imported
-                     // For now, simpler to import at top
-                     await SeedDataService().seedRecipes();
-                     if (context.mounted) {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(content: Text('Recipes seeded successfully!')));
-                     }
-                  } catch (e) {
-                     if (context.mounted) {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-                     }
-                  }
-                },
-                iconColor: Colors.purple,
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  ),
-);
-  }
-
-  Widget _buildStatColumn(String emoji, String value, String label) {
-    return Column(
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(height: 8),
-        Text(value, style: AppTextStyles.titleMedium),
-        Text(label, style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate)),
-      ],
-    );
-  }
-
-  Widget _buildContainerDivider() {
-    return Container(
-      height: 40,
-      width: 1,
-      color: Colors.grey.withOpacity(0.2),
-    );
-  }
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileOption extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-  final Color? textColor;
-  final Color? iconColor;
-
-  const _ProfileOption({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-    this.textColor,
-    this.iconColor,
-  });
+class _ProfileScreenState extends State<ProfileScreen>
+    with AutomaticKeepAliveClientMixin {
+  
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 32),
+              _buildStatsSection(),
+              const SizedBox(height: 32),
+              _buildPremiumSection(),
+              const SizedBox(height: 32),
+              _buildSettingsSection(),
+              const SizedBox(height: 32),
+              _buildSupportSection(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Consumer<PremiumService>(
+      builder: (context, premiumService, _) {
+        return Row(
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.accent],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+                
+                if (premiumService.isPremium)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.primary, AppColors.accent],
+                        ),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.star,
+                        color: Colors.white,
+                        size: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 20),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'John Doe', // TODO: Get from user provider
+                    style: AppTextStyles.headlineMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      if (premiumService.isPremium) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [AppColors.primary, AppColors.accent],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Premium',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        Text(
+                          'Free Account',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Cooking enthusiast since 2024',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            IconButton(
+              onPressed: _showProfileOptions,
+              icon: const Icon(Icons.more_vert),
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.surface,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatsSection() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Cooking Journey',
+            style: AppTextStyles.titleMedium.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatCard(
+                '🔥',
+                '7',
+                'Day Streak',
+                AppColors.primary,
+              ),
+              _buildStatCard(
+                '🍳',
+                '42',
+                'Recipes Cooked',
+                Colors.orange,
+              ),
+              _buildStatCard(
+                '📚',
+                '128',
+                'Recipes Saved',
+                Colors.green,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatCard(
+                '📝',
+                '15',
+                'Meals Logged',
+                Colors.blue,
+              ),
+              _buildStatCard(
+                '🛒',
+                '8',
+                'Lists Created',
+                Colors.purple,
+              ),
+              _buildStatCard(
+                '⭐',
+                '4.8',
+                'Avg Rating',
+                Colors.amber,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String emoji, String value, String label, Color color) {
+    return Column(
+      children: [
+        Text(
+          emoji,
+          style: const TextStyle(fontSize: 24),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: AppTextStyles.titleLarge.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPremiumSection() {
+    return Consumer<PremiumService>(
+      builder: (context, premiumService, _) {
+        if (premiumService.isPremium) {
+          return _buildPremiumActiveCard();
+        } else {
+          return _buildUpgradeCard(premiumService);
+        }
+      },
+    );
+  }
+
+  Widget _buildPremiumActiveCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.1),
+            AppColors.accent.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary, AppColors.accent],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.star,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Premium Active',
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          Text(
+            'You have access to all premium features including AI Dietitian, Food Journal, and unlimited recipes.',
+            style: AppTextStyles.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _managePremium,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Manage Subscription'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpgradeCard(PremiumService premiumService) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.accent.withOpacity(0.1),
+            AppColors.primary.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.accent.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.upgrade,
+                  color: AppColors.accent,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Upgrade to Premium',
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          Text(
+            'Unlock AI Dietitian, Food Journal, Meal Planning, and unlimited recipes for just ${premiumService.monthlyPrice}/month.',
+            style: AppTextStyles.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _showUpgradeModal,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Upgrade Now'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Settings',
+          style: AppTextStyles.titleMedium.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        _buildSettingsTile(
+          icon: Icons.person,
+          title: 'Account Settings',
+          subtitle: 'Manage your profile and preferences',
+          onTap: _openAccountSettings,
+        ),
+        _buildSettingsTile(
+          icon: Icons.notifications,
+          title: 'Notifications',
+          subtitle: 'Cooking reminders and updates',
+          onTap: _openNotificationSettings,
+        ),
+        _buildSettingsTile(
+          icon: Icons.security,
+          title: 'Privacy & Security',
+          subtitle: 'Data and privacy controls',
+          onTap: _openPrivacySettings,
+        ),
+        _buildSettingsTile(
+          icon: Icons.download,
+          title: 'Export Data',
+          subtitle: 'Download your recipes and data',
+          onTap: _exportData,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSupportSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Support',
+          style: AppTextStyles.titleMedium.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        _buildSettingsTile(
+          icon: Icons.help,
+          title: 'Help Center',
+          subtitle: 'FAQs and tutorials',
+          onTap: _openHelpCenter,
+        ),
+        _buildSettingsTile(
+          icon: Icons.feedback,
+          title: 'Send Feedback',
+          subtitle: 'Help us improve Crave',
+          onTap: _sendFeedback,
+        ),
+        _buildSettingsTile(
+          icon: Icons.info,
+          title: 'About Crave',
+          subtitle: 'Version 1.0.0',
+          onTap: _showAbout,
+        ),
+        _buildSettingsTile(
+          icon: Icons.logout,
+          title: 'Sign Out',
+          subtitle: 'Log out of your account',
+          onTap: _signOut,
+          isDestructive: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: (iconColor ?? AppColors.primary).withOpacity(0.1),
+            color: isDestructive 
+                ? Colors.red.withOpacity(0.1) 
+                : AppColors.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: iconColor ?? AppColors.primary),
+          child: Icon(
+            icon,
+            color: isDestructive ? Colors.red : AppColors.primary,
+            size: 20,
+          ),
         ),
         title: Text(
           title,
-          style: AppTextStyles.labelLarge.copyWith(color: textColor ?? AppColors.textPrimary),
+          style: AppTextStyles.titleSmall.copyWith(
+            fontWeight: FontWeight.w500,
+            color: isDestructive ? Colors.red : null,
+          ),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        subtitle: Text(
+          subtitle,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: AppColors.textSecondary,
+        ),
         onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  void _showProfileOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                _editProfile();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('Share Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                _shareProfile();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUpgradeModal() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PaywallView(),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
+  // Settings actions
+  void _managePremium() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Manage Premium - Coming Soon!')),
+    );
+  }
+
+  void _editProfile() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Edit Profile - Coming Soon!')),
+    );
+  }
+
+  void _shareProfile() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Share Profile - Coming Soon!')),
+    );
+  }
+
+  void _openAccountSettings() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Account Settings - Coming Soon!')),
+    );
+  }
+
+  void _openNotificationSettings() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Notification Settings - Coming Soon!')),
+    );
+  }
+
+  void _openPrivacySettings() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Privacy Settings - Coming Soon!')),
+    );
+  }
+
+  void _exportData() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('📤 Data export started!')),
+    );
+  }
+
+  void _openHelpCenter() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Help Center - Coming Soon!')),
+    );
+  }
+
+  void _sendFeedback() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Feedback - Coming Soon!')),
+    );
+  }
+
+  void _showAbout() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Crave',
+      applicationVersion: '1.0.0',
+      applicationIcon: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.primary, AppColors.accent],
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(
+          Icons.restaurant,
+          color: Colors.white,
+          size: 32,
+        ),
+      ),
+      children: [
+        const Text('Your AI-powered cooking companion for healthy, delicious meals.'),
+      ],
+    );
+  }
+
+  void _signOut() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement sign out
+              final authService = Provider.of<AuthService>(context, listen: false);
+              authService.signOut();
+            },
+            child: const Text('Sign Out'),
+          ),
+        ],
       ),
     );
   }

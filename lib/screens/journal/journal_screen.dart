@@ -16,26 +16,15 @@ class JournalScreen extends StatelessWidget {
           appBar: AppBar(
             title: Text('Food Journal', style: AppTextStyles.headlineMedium),
             centerTitle: true,
-            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           ),
           body: premium.isPremium
               ? const JournalDashboard()
-              : PaywallView(
-                  isLoading: premium.isLoading,
-                  onUnlock: () async {
-                    try {
-                      await premium.unlockPremium();
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(e.toString().replaceAll('Exception: ', '')),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
+              : const PaywallView(
+                  featureId: 'journal',
                 ),
         );
       },

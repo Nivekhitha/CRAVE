@@ -28,6 +28,7 @@ class UserProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _pantryList = [];
   List<Recipe> _allRecipes = [];
   List<RecipeMatch> _recipeMatches = [];
+  bool _suggestionsLoading = false;
 
   // Stream Subscriptions
   StreamSubscription? _authSubscription;
@@ -46,6 +47,7 @@ class UserProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get groceryList => _groceryList;
   List<Map<String, dynamic>> get pantryList => _pantryList;
   List<RecipeMatch> get recipeMatches => _recipeMatches;
+  bool get suggestionsLoading => _suggestionsLoading;
 
   UserProvider() {
     _init();
@@ -292,6 +294,40 @@ class UserProvider extends ChangeNotifier {
     _cookingStreak++;
     // In a real app, verify against last cooked date to only increment streak once per day
     notifyListeners();
+  }
+
+  // Recipe suggestion methods
+  List<Recipe> getSuggestionsForMeal(String mealType) {
+    // Return filtered recipes based on meal type
+    return _allRecipes.where((recipe) {
+      if (recipe.tags == null) return false;
+      return recipe.tags!.any((tag) => tag.toLowerCase().contains(mealType.toLowerCase()));
+    }).take(5).toList();
+  }
+
+  List<Recipe> getOneIngredientAway() {
+    // Return recipes that need just one more ingredient
+    return _recipeMatches
+        .where((match) => match.matchPercentage >= 80)
+        .map((match) => match.recipe)
+        .take(3)
+        .toList();
+  }
+
+  List<String> getIngredientSuggestions() {
+    // Return common ingredients that could complete recipes
+    final suggestions = <String>[];
+    for (final recipe in _allRecipes) {
+      for (final ingredient in recipe.ingredients) {
+        if (!_pantryList.any((item) => 
+            (item['name'] as String? ?? '').toLowerCase() == ingredient.toLowerCase())) {
+          if (!suggestions.contains(ingredient)) {
+            suggestions.add(ingredient);
+          }
+        }
+      }
+    }
+    return suggestions;
   }
 
 

@@ -5,6 +5,9 @@ import '../../app/app_text_styles.dart';
 import '../../app/routes.dart';
 import '../../services/auth_service.dart';
 import '../../services/premium_service.dart';
+import '../../services/journal_service.dart';
+import '../../services/meal_plan_service.dart';
+import '../../services/nutrition_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,22 +39,38 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
     
-    // Initialize RevenueCat/Premium status
-    // We do this during the splash screen so the app knows if we are premium immediately.
-    context.read<PremiumService>().initialize();
+    // Initialize all services
+    _initializeServices();
+  }
 
-    // Navigate based on Auth State after animation
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        final user = AuthService().currentUser;
-        if (user != null) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-        } else {
-          // Check if onboarding was already seen? For now go to Onboarding -> Login
-          Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
-        }
+  Future<void> _initializeServices() async {
+    try {
+      // Initialize premium service first
+      await context.read<PremiumService>().initialize();
+      
+      // Initialize data services
+      await context.read<JournalService>().init();
+      await context.read<MealPlanService>().init();
+      await context.read<NutritionService>().init();
+      
+      debugPrint("✅ All services initialized successfully");
+    } catch (e) {
+      debugPrint("❌ Service initialization error: $e");
+    }
+
+    // Navigate based on Auth State after animation and initialization
+    await Future.delayed(const Duration(milliseconds: 2500));
+    
+    if (mounted) {
+      final user = AuthService().currentUser;
+      if (user != null) {
+        // User is logged in, go to main navigation
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      } else {
+        // User not logged in, go to onboarding
+        Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
       }
-    });
+    }
   }
 
   @override
@@ -77,9 +96,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         ),
         child: Stack(
           children: [
-            // Floating particles or subtle movement could go here, 
-            // but for now, we'll keep it clean as requested.
-            
             // Content
             Center(
               child: FadeTransition(
@@ -141,6 +157,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white70,
                           letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      // Loading indicator
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.primary.withValues(alpha: 0.7),
+                          ),
                         ),
                       ),
                     ],

@@ -2,129 +2,123 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/premium_service.dart';
 import 'paywall_view.dart';
-import '../../app/app_colors.dart';
 
+/// Premium gate widget that shows content for premium users or paywall for free users
 class PremiumGate extends StatelessWidget {
   final Widget child;
   final String featureId;
-  final Widget? lockedBuilder;
+  final String? title;
+  final String? description;
+  final bool showTrialInfo;
 
   const PremiumGate({
     super.key,
     required this.child,
-    this.featureId = 'generic_feature',
-    this.lockedBuilder,
+    required this.featureId,
+    this.title,
+    this.description,
+    this.showTrialInfo = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Consumer<PremiumService>(
       builder: (context, premiumService, _) {
-        if (premiumService.isPremium) {
+        // If user can access the feature, show the content
+        if (premiumService.canUseFeature(featureId)) {
           return child;
         }
 
-        // Optional: Custom locked view
-        if (lockedBuilder != null) {
-          return lockedBuilder!;
-        }
-
-        // specific check if needed, mostly redundant if gate is used
-        if (!premiumService.canUseFeature(featureId)) {
-             return _buildLockedOverlay(context, premiumService);
-        }
-        
-        return child;
+        // Otherwise, show the paywall
+        return PaywallView(
+          featureId: featureId,
+          title: title,
+          description: description,
+          showTrialInfo: showTrialInfo,
+        );
       },
     );
   }
+}
 
-  Widget _buildLockedOverlay(BuildContext context, PremiumService premiumService) {
-      return Stack(
-          children: [
-              // Blur or disable child
-              AbsorbPointer(
-                  child: ColorFiltered(
-                      colorFilter: const ColorFilter.mode(
-                          Colors.grey, 
-                          BlendMode.saturation
-                      ),
-                      child: Opacity(opacity: 0.3, child: child),
-                  ),
-              ),
-              
-              // Paywall Preview
-              Center(
-                  child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24),
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                              )
-                          ]
-                      ),
-                      child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                              const Icon(Icons.lock_outline_rounded, size: 48, color: AppColors.warmPeach),
-                              const SizedBox(height: 16),
-                              const Text(
-                                  "Premium Feature",
-                                  style: TextStyle(
-                                      fontSize: 20, 
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary
-                                  ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                  "Unlock unlimited access to all features.",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: AppColors.textSecondary),
-                              ),
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                  onPressed: () {
-                                      // Show full paywall
-                                      showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (_) => PaywallView(
-                                              onUnlock: () async {
-                                                  try {
-                                                      await premiumService.unlockPremium();
-                                                      Navigator.pop(context);
-                                                  } catch (e) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                          SnackBar(content: Text(e.toString()))
-                                                      );
-                                                  }
-                                              },
-                                              isLoading: premiumService.isLoading,
-                                          )
-                                      );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.freshMint,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16)
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12)
-                                  ),
-                                  child: const Text("Unlock Now", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              )
-                          ],
-                      ),
-                  ),
-              )
-          ],
-      );
+/// Convenience widget for journal features
+class JournalGate extends StatelessWidget {
+  final Widget child;
+
+  const JournalGate({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumGate(
+      featureId: 'journal',
+      title: 'Food Journal',
+      description: 'Track your meals and nutrition with detailed insights',
+      child: child,
+    );
+  }
+}
+
+/// Convenience widget for meal planning features
+class MealPlanningGate extends StatelessWidget {
+  final Widget child;
+
+  const MealPlanningGate({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumGate(
+      featureId: 'meal_planning',
+      title: 'Meal Planning',
+      description: 'Plan your weekly meals with smart suggestions',
+      child: child,
+    );
+  }
+}
+
+/// Convenience widget for nutrition dashboard
+class NutritionGate extends StatelessWidget {
+  final Widget child;
+
+  const NutritionGate({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumGate(
+      featureId: 'nutrition_dashboard',
+      title: 'Nutrition Dashboard',
+      description: 'Comprehensive nutrition tracking and analytics',
+      showTrialInfo: false,
+      child: child,
+    );
+  }
+}
+
+/// Convenience widget for AI dietitian features
+class AIDietitianGate extends StatelessWidget {
+  final Widget child;
+
+  const AIDietitianGate({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumGate(
+      featureId: 'ai_dietitian',
+      title: 'Personal AI Dietitian',
+      description: 'Get personalized nutrition advice and meal recommendations',
+      showTrialInfo: false,
+      child: child,
+    );
   }
 }

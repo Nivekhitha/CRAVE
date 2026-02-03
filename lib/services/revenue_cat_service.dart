@@ -15,6 +15,7 @@ class RevenueCatService {
   RevenueCatService._internal();
 
   bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
 
   /// Initialize the RevenueCat SDK.
   Future<void> init(String? userId) async {
@@ -62,7 +63,20 @@ class RevenueCatService {
     return null;
   }
 
-  /// Handles the purchase flow for a specific package.
+  /// Fetches the current offering and returns the yearly package.
+  Future<Package?> getYearlyPackage() async {
+    if (kIsWeb) return null;
+    try {
+      Offerings offerings = await Purchases.getOfferings();
+      
+      if (offerings.current != null && offerings.current?.annual != null) {
+        return offerings.current!.annual;
+      }
+    } catch (e) {
+      debugPrint('❌ Error fetching yearly package: $e');
+    }
+    return null;
+  }
   Future<bool> purchasePackage(Package package) async {
     if (kIsWeb) return false;
     try {

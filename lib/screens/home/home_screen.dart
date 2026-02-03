@@ -7,6 +7,7 @@ import '../../providers/user_provider.dart';
 import '../../services/premium_service.dart';
 import '../../services/firestore_service.dart'; 
 import '../../services/journal_service.dart'; 
+import '../../services/nutrition_service.dart';
 
 // Screens
 import '../discovery/discovery_screen.dart'; 
@@ -19,12 +20,14 @@ import '../emotional_cooking/emotional_cooking_screen.dart';
 import '../cooking_journey/cooking_journey_screen.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 import '../journal/journal_screen.dart'; 
+import '../nutrition/nutrition_dashboard_screen.dart';
 
 // New Widgets
 import '../../widgets/home/home_header.dart';
 import '../../widgets/cards/hero_action_card.dart';
 import '../../widgets/cards/recipe_card_horizontal.dart';
 import '../../widgets/home/quick_action_bottom_sheet.dart';
+import '../../widgets/nutrition/nutrition_snapshot_card.dart';
 import '../../services/image_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -43,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<PremiumService>(context, listen: false).initialize();
       Provider.of<JournalService>(context, listen: false).init();
+      Provider.of<NutritionService>(context, listen: false).init();
     });
   }
 
@@ -146,6 +150,24 @@ class _HomeView extends StatelessWidget {
             child: SafeArea(
               bottom: false,
               child: HomeHeader(userName: username, avatarUrl: avatarUrl),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // Nutrition Snapshot Card
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: NutritionSnapshotCard(
+                showDetails: false,
+                onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (_) => const NutritionDashboardScreen())
+                  );
+                },
+              ),
             ),
           ),
 
