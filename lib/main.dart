@@ -40,11 +40,15 @@ Future<void> main() async {
     debugPrint("⚠️ WARNING: RevenueCat is NOT supported on Web. Please run on Android for full features.");
   }
 
+  // Initialize Premium Service (RevenueCat)
+  final premiumService = PremiumService();
+  await premiumService.initialize();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => PremiumService()),
+        ChangeNotifierProvider.value(value: premiumService),
       ],
       child: const CraveApp(),
     ),

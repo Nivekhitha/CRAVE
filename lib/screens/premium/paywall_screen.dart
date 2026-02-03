@@ -265,10 +265,27 @@ class _PaywallScreenState extends State<PaywallScreen>
   }
 
   Widget _buildPricingSection(PremiumService premiumService) {
+    if (premiumService.isLoading && !premiumService.isOfferingsLoaded) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     final pricing = premiumService.pricing;
 
     return Column(
       children: [
+        if (!premiumService.isOfferingsLoaded)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              '⚠️ Prices could not be loaded. Please check your connection.',
+              style: AppTextStyles.bodySmall.copyWith(color: Colors.red),
+            ),
+          ),
         Text(
           'Choose Your Plan',
           style: AppTextStyles.titleMedium.copyWith(
@@ -294,12 +311,11 @@ class _PaywallScreenState extends State<PaywallScreen>
               // Yearly option (recommended)
               _buildPricingOption(
                 title: 'Yearly',
-                price: pricing.yearlyPriceFormatted,
+                price: pricing.yearlyPriceString,
                 subtitle: 'Save ${pricing.yearlySavings}%',
                 isSelected: _isYearlySelected,
                 isRecommended: true,
                 onTap: () => setState(() => _isYearlySelected = true),
-                premiumService: premiumService,
               ),
 
               Divider(
@@ -310,12 +326,13 @@ class _PaywallScreenState extends State<PaywallScreen>
               // Monthly option
               _buildPricingOption(
                 title: 'Monthly',
-                price: '${pricing.monthlyPriceFormatted}/month',
+                price: pricing.monthlyPriceString == "No available price" 
+                  ? "Unavailable" 
+                  : "${pricing.monthlyPriceString}/month",
                 subtitle: 'Billed monthly',
                 isSelected: !_isYearlySelected,
                 isRecommended: false,
                 onTap: () => setState(() => _isYearlySelected = false),
-                premiumService: premiumService,
               ),
             ],
           ),
@@ -331,7 +348,6 @@ class _PaywallScreenState extends State<PaywallScreen>
     required bool isSelected,
     required bool isRecommended,
     required VoidCallback onTap,
-    required PremiumService premiumService,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -417,7 +433,7 @@ class _PaywallScreenState extends State<PaywallScreen>
 
             // Price
             Text(
-              price == '\$4.99' ? premiumService.monthlyPrice : price,
+              price,
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,

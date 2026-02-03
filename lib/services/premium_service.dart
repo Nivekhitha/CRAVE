@@ -16,7 +16,8 @@ class PremiumService extends ChangeNotifier {
   // Getters
   bool get isPremium => _isPremium;
   bool get isLoading => _isLoading;
-  String get monthlyPrice => _monthlyPackage?.storeProduct.priceString ?? "\$4.99";
+  bool get isOfferingsLoaded => _monthlyPackage != null;
+  String get monthlyPrice => _monthlyPackage?.storeProduct.priceString ?? "No available price";
 
   // Feature limits
   int get maxRecipes => _isPremium ? 999 : 10;
@@ -69,6 +70,20 @@ class PremiumService extends ChangeNotifier {
 
   // Initialize premium status and RevenueCat
   Future<void> initialize() async {
+    debugPrint('🔔 PremiumService: Initializing...');
+    
+    // Listen to auth changes to sync with RevenueCat user IDs
+    _auth.authStateChanges.listen((user) async {
+      if (user != null) {
+        debugPrint('🔔 PremiumService: Auth detected login, syncing UID: ${user.uid}');
+        await _rcService.logIn(user.uid);
+      } else {
+        debugPrint('🔔 PremiumService: Auth detected logout, clearing UID');
+        await _rcService.logOut();
+      }
+      await refreshStatus();
+    });
+
     final userId = _auth.userId;
     await _rcService.init(userId);
     await refreshStatus();
@@ -76,22 +91,31 @@ class PremiumService extends ChangeNotifier {
 
   /// Refreshes the premium status from RevenueCat and updates local state
   Future<void> refreshStatus() async {
+    if (_isLoading) return;
+    
     _isLoading = true;
     notifyListeners();
 
     try {
+      debugPrint('🔔 PremiumService: Refreshing status...');
       // 1. Check RevenueCat Entitlement
       _isPremium = await _rcService.isPremiumUser();
       
       // 2. Fetch current offerings for UI
       _monthlyPackage = await _rcService.getMonthlyPackage();
       
+      if (_monthlyPackage != null) {
+        debugPrint('🔔 PremiumService: Monthly package loaded: ${_monthlyPackage!.storeProduct.priceString}');
+      } else {
+        debugPrint('🔔 PremiumService: No monthly package found.');
+      }
+      
       // 3. Sync with Firestore (optional backup)
       if (_isPremium) {
         await _savePremiumStatus();
       }
     } catch (e) {
-      debugPrint('Error refreshing status: $e');
+      debugPrint('❌ PremiumService: Error refreshing status: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -100,12 +124,16 @@ class PremiumService extends ChangeNotifier {
 
   // Actual purchase flow through RevenueCat
   Future<void> unlockPremium() async {
+    debugPrint('🔔 PremiumService: unlockPremium requested');
+    
     if (_monthlyPackage == null) {
+      debugPrint('🔔 PremiumService: Monthly package null, refreshing...');
       await refreshStatus();
     }
     
     if (_monthlyPackage == null) {
-      throw 'No subscription packages available. Please try again later.';
+      debugPrint('❌ PremiumService: Still no packages available.');
+      throw 'No subscription packages available. Please ensure you are on a real device with Google Play Store access.';
     }
 
     _isLoading = true;
@@ -118,10 +146,11 @@ class PremiumService extends ChangeNotifier {
         await _savePremiumStatus();
         debugPrint('✅ Premium unlocked successfully with RevenueCat!');
       } else {
+        debugPrint('⚠️ PremiumService: Purchase not completed or failed.');
         throw 'Purchase was not completed.';
       }
     } catch (e) {
-      debugPrint('❌ Premium unlock failed: $e');
+      debugPrint('❌ PremiumService: Premium unlock failed: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -139,7 +168,11 @@ class PremiumService extends ChangeNotifier {
       if (success) {
         _isPremium = true;
         await _savePremiumStatus();
+        debugPrint('✅ PremiumService: Purchases restored successfully.');
       }
+    } catch (e) {
+      debugPrint('❌ PremiumService: Restore failed: $e');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -150,15 +183,14 @@ class PremiumService extends ChangeNotifier {
   Future<void> _savePremiumStatus() async {
     try {
       final userId = _auth.userId;
-      if (userId == null) throw 'User not authenticated';
+      if (userId == null) return; // Don't crash if no user
 
       await _db.collection('users').doc(userId).set({
         'isPremium': _isPremium,
         'premiumUnlockedAt': _isPremium ? FieldValue.serverTimestamp() : null,
       }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error saving premium status: $e');
-      rethrow;
+      debugPrint('⚠️ PremiumService: Error saving premium status to Firestore: $e');
     }
   }
 
@@ -189,10 +221,12 @@ class PremiumService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Get premium pricing info
+  // Pricing model (Helper) - note: actual price comes from RevenueCat
+  // But we still need these for UI display logic (yearly vs monthly calculation)
+  // We should ideally fetch yearly package too if we want a real comparison.
   PremiumPricing get pricing => PremiumPricing(
-        monthlyPrice: 4.99,
-        yearlyPrice: 39.99,
+        monthlyPriceString: monthlyPrice,
+        yearlyPriceString: "Coming Soon", // Or fetch yearly package
         yearlySavings: 33,
       );
 }
@@ -213,16 +247,14 @@ class PremiumFeature {
 }
 
 class PremiumPricing {
-  final double monthlyPrice;
-  final double yearlyPrice;
+  final String monthlyPriceString;
+  final String yearlyPriceString;
   final int yearlySavings;
 
   PremiumPricing({
-    required this.monthlyPrice,
-    required this.yearlyPrice,
+    required this.monthlyPriceString,
+    required this.yearlyPriceString,
     required this.yearlySavings,
   });
-
-  String get monthlyPriceFormatted => '\$${monthlyPrice.toStringAsFixed(2)}';
-  String get yearlyPriceFormatted => '\$${yearlyPrice.toStringAsFixed(2)}';
 }
+
