@@ -7,6 +7,8 @@ import '../../providers/user_provider.dart';
 import '../../widgets/discovery/search_bar_widget.dart';
 import '../../widgets/discovery/filter_chip_list.dart';
 import '../../widgets/cards/recipe_card_horizontal.dart'; // Reuse for now or create grid card
+import '../../widgets/images/smart_recipe_image.dart';
+import '../../services/image_service.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 
 class DiscoveryScreen extends StatefulWidget {
@@ -136,15 +138,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                             children: [
                               // Image
                               Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.freshMint.withOpacity(0.1),
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                                    image: DecorationImage(
-                                      image: NetworkImage("https://source.unsplash.com/random/400x400/?food,${recipe.title}"),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
+                                child: SmartRecipeImage(
+                                  recipe: recipe,
+                                  size: ImageSize.card,
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                  fit: BoxFit.cover,
                                 ),
                               ),
                               Padding(

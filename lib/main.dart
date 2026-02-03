@@ -6,6 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // Added
 import 'package:hive_flutter/hive_flutter.dart'; // Added
 import 'services/hive_service.dart';
 import 'services/premium_service.dart';
+import 'services/journal_service.dart';
+import 'services/meal_plan_service.dart';
 import 'app/app.dart';
 import 'providers/user_provider.dart';
 import 'firebase_options.dart'; // Ensure this file exists, assuming it was generated
@@ -40,11 +42,15 @@ Future<void> main() async {
     debugPrint("⚠️ WARNING: RevenueCat is NOT supported on Web. Please run on Android for full features.");
   }
 
+
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => PremiumService()),
+        ChangeNotifierProvider(create: (_) => JournalService()),
+        ChangeNotifierProvider(create: (_) => MealPlanService()),
       ],
       child: const CraveApp(),
     ),

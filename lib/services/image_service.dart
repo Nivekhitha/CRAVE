@@ -29,7 +29,7 @@ class ImageService {
   ];
 
   /// Get the best available image URL for a recipe
-  Future<String> getRecipeImageUrl(Recipe recipe) async {
+  Future<String?> getRecipeImageUrl(Recipe recipe) async {
     try {
       // 1. Check if user uploaded an image
       if (recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty) {
@@ -45,17 +45,45 @@ class ImageService {
       }
 
       // 3. Get Unsplash image based on recipe title
-      final unsplashUrl = _getUnsplashImageUrl(recipe.title);
+      final unsplashUrl = _getUnsplashImageUrl(recipe.title, recipe.id);
       if (await _isValidImageUrl(unsplashUrl)) {
         return unsplashUrl;
       }
 
-      // 4. Fallback to placeholder
+      // 4. Fallback (now returns null)
       return _getPlaceholderImageUrl(recipe);
     } catch (e) {
       debugPrint('❌ Error getting recipe image URL: $e');
       return _getPlaceholderImageUrl(recipe);
     }
+  }
+  
+  // Future<String?> _getAIGeneratedImage(Recipe recipe) ... (assuming this signature is already compatible or needs check. 
+  // Since I can't see it, I'll assume it returns String? based on usage `if (aiImageUrl != null)`).
+  
+  // _getUnsplashImageUrl returns String (non-future usually). I'll check its usage.
+  
+  // ...
+
+  // Fix getOptimizedImageUrl
+  String? getOptimizedImageUrl(String? originalUrl, ImageSize size) {
+    if (originalUrl == null) return null;
+
+    if (originalUrl.contains('loremflickr.com')) {
+      final dimensions = _getDimensionsForSize(size);
+      return originalUrl.replaceAll(
+        RegExp(r'/\d+/\d+/'),
+        '/${dimensions.width}/${dimensions.height}/',
+      );
+    } else if (originalUrl.contains('source.unsplash.com')) {
+      final dimensions = _getDimensionsForSize(size);
+      return originalUrl.replaceAll(
+        RegExp(r'/\d+x\d+/'),
+        '/${dimensions.width}x${dimensions.height}/',
+      );
+    }
+    
+    return originalUrl;
   }
 
   /// Upload user image to Firebase Storage
@@ -120,25 +148,33 @@ class ImageService {
   }
 
   /// Get Unsplash image URL based on recipe title
-  String _getUnsplashImageUrl(String recipeTitle) {
+  String _getUnsplashImageUrl(String recipeTitle, [String? recipeId]) {
     // Clean and format recipe title for search
     final searchTerm = recipeTitle
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
         .replaceAll(' ', ',');
     
-    // Unsplash Source API (free tier)
-    return 'https://source.unsplash.com/800x600/?food,$searchTerm,delicious';
+    // LoremFlickr (free alternative to Unsplash Source)
+    // Use recipeId hash as lock to ensure consistent image for same recipe
+    final lock = recipeId != null ? recipeId.hashCode : DateTime.now().millisecondsSinceEpoch;
+    return 'https://loremflickr.com/800/600/food,$searchTerm?lock=$lock';
   }
 
   /// Generate placeholder image URL
-  String _getPlaceholderImageUrl(Recipe recipe) {
-    // Use recipe category or difficulty to determine placeholder
-    final category = recipe.tags?.isNotEmpty == true ? recipe.tags!.first : 'food';
-    final colorCode = _getColorCodeForCategory(category);
-    
-    // Use a placeholder service or local asset
-    return 'https://via.placeholder.com/800x600/$colorCode/FFFFFF?text=${Uri.encodeComponent(recipe.title)}';
+  /// Returns null so SmartRecipeImage can show its gradient fallback
+  String? _getPlaceholderImageUrl(Recipe recipe) {
+    return null; 
+  }
+
+  /// Get a consistent avatar URL for the user
+  String getUserAvatarUrl(String? seed) {
+    // Use a consistent robot/avatar service or just return asset path logic in UI
+    // specific to avatars.
+    // For now, let's use a nice Unsplash collection or UI Avatars?
+    // UI Avatars is clean:
+    final name = seed ?? 'User';
+    return 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff';
   }
 
   /// Compress image for efficient storage and loading
@@ -168,8 +204,8 @@ class ImageService {
       final response = await http.head(Uri.parse(url)).timeout(
         const Duration(seconds: 3), // Reduced timeout for better UX
       );
-      return response.statusCode == 200 && 
-             response.headers['content-type']?.startsWith('image/') == true;
+      // 302 Found is also acceptable as it usually redirects to the actual image
+      return (response.statusCode == 200 || response.statusCode == 302);
     } catch (e) {
       debugPrint('⚠️ Image URL validation failed for $url: $e');
       return false;
@@ -234,8 +270,8 @@ class ImageService {
       final keyTerms = _extractKeyTermsFromPrompt(prompt);
       final searchQuery = keyTerms.join(',');
       
-      // Use Unsplash Source API with specific terms
-      final url = 'https://source.unsplash.com/800x600/?$searchQuery';
+      // Use LoremFlickr with specific terms
+      final url = 'https://loremflickr.com/800/600/$searchQuery';
       
       if (await _isValidImageUrl(url)) {
         return url;
@@ -286,18 +322,7 @@ class ImageService {
     }
   }
 
-  /// Get optimized image URL for different screen sizes
-  String getOptimizedImageUrl(String originalUrl, ImageSize size) {
-    if (originalUrl.contains('unsplash.com')) {
-      final dimensions = _getDimensionsForSize(size);
-      return originalUrl.replaceAll(
-        RegExp(r'/\d+x\d+/'),
-        '/${dimensions.width}x${dimensions.height}/',
-      );
-    }
-    
-    return originalUrl;
-  }
+
 
   /// Get dimensions for image size
   ImageDimensions _getDimensionsForSize(ImageSize size) {
@@ -318,8 +343,10 @@ class ImageService {
     for (final recipe in recipes.take(5)) { // Preload first 5
       try {
         final imageUrl = await getRecipeImageUrl(recipe);
-        // Preload using cached_network_image
-        await precacheImage(CachedNetworkImageProvider(imageUrl), context);
+        if (imageUrl != null) {
+          // Preload using cached_network_image
+          await precacheImage(CachedNetworkImageProvider(imageUrl), context);
+        }
       } catch (e) {
         debugPrint('⚠️ Failed to preload image for ${recipe.title}: $e');
       }

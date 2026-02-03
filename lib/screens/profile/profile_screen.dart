@@ -4,6 +4,12 @@ import '../../app/app_text_styles.dart';
 import '../../app/routes.dart';
 import '../../services/seed_data_service.dart';
 
+import 'package:provider/provider.dart';
+import '../../services/image_service.dart';
+import '../../services/premium_service.dart';
+import '../../providers/user_provider.dart';
+import '../../widgets/premium/paywall_view.dart';
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -11,39 +17,135 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              // Avatar
-              Center(
-                child: Stack(
-                  children: [
-                    const CircleAvatar(
-                      radius: 60,
-                      backgroundImage: NetworkImage('https://i.pravatar.cc/150'), // Placeholder
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
+      body: Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          final username = userProvider.username ?? 'Guest';
+          final email = userProvider.user?.email ?? 'No email';
+          final avatarUrl = ImageService().getUserAvatarUrl(username);
+          
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  // Avatar
+                  Center(
+                    child: Stack(
+                      children: [
+                         CircleAvatar(
+                          radius: 60,
+                          backgroundImage: NetworkImage(avatarUrl),
                         ),
-                        child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(username, style: AppTextStyles.headlineMedium),
+                      if (Provider.of<PremiumService>(context).isPremium) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.magicHour,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text('PRO', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        )
+                      ]
+                    ],
+                  ),
+                  Text(email, style: AppTextStyles.bodyMedium),
+                  
+                  const SizedBox(height: 24),
+
+                  // Stats Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildStatColumn('🔥', '${userProvider.cookingStreak} Day', 'Strom'),
+                      _buildContainerDivider(),
+                      _buildStatColumn('🍳', '${userProvider.recipesCooked}', 'Cooked'),
+                      _buildContainerDivider(),
+                      _buildStatColumn('📝', '12', 'Logged'), // Mock 'Logged' for now
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Upgrade Banner
+                  if (!Provider.of<PremiumService>(context).isPremium)
+                    GestureDetector(
+                      onTap: () {
+                         // Trigger paywall via premium gate or direct navigation
+                         // For now, simple snackbar or navigate to Journal (which is gated)
+                         // Or better, show Paywall modal directly
+                         showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => PaywallView(
+                               onUnlock: () async {
+                                  try {
+                                     await Provider.of<PremiumService>(context, listen: false).unlockPremium();
+                                     Navigator.pop(context);
+                                  } catch (e) {
+                                     // Error handled in service
+                                  }
+                               },
+                               isLoading: Provider.of<PremiumService>(context).isLoading,
+                            )
+                         );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.magicHour,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                             BoxShadow(color: AppColors.accent.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))
+                          ]
+                        ),
+                        child: Row(
+                          children: [
+                             Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                                child: const Icon(Icons.star, color: Colors.white),
+                             ),
+                             const SizedBox(width: 16),
+                             const Expanded(
+                                child: Column(
+                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                   children: [
+                                      Text("Upgrade to Premium", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                      Text("Unlock AI Dietitian & unlimited recipes", style: TextStyle(color: Colors.white70, fontSize: 12))
+                                   ],
+                                ),
+                             ),
+                             const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16)
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text('User Name', style: AppTextStyles.headlineMedium),
-              Text('user@example.com', style: AppTextStyles.bodyMedium),
-              const SizedBox(height: 32),
+                  
+                  const SizedBox(height: 32),
 
               // Menu Options
               _ProfileOption(icon: Icons.person_outline, title: 'My Account', onTap: () {}),
@@ -88,7 +190,28 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
+      );
+    },
+  ),
+);
+  }
+
+  Widget _buildStatColumn(String emoji, String value, String label) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 24)),
+        const SizedBox(height: 8),
+        Text(value, style: AppTextStyles.titleMedium),
+        Text(label, style: AppTextStyles.bodySmall.copyWith(color: AppColors.slate)),
+      ],
+    );
+  }
+
+  Widget _buildContainerDivider() {
+    return Container(
+      height: 40,
+      width: 1,
+      color: Colors.grey.withOpacity(0.2),
     );
   }
 }

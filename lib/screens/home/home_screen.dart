@@ -6,6 +6,7 @@ import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
 import '../../services/premium_service.dart';
 import '../../services/firestore_service.dart'; 
+import '../../services/journal_service.dart'; 
 
 // Screens
 import '../discovery/discovery_screen.dart'; 
@@ -23,6 +24,8 @@ import '../journal/journal_screen.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/cards/hero_action_card.dart';
 import '../../widgets/cards/recipe_card_horizontal.dart';
+import '../../widgets/home/quick_action_bottom_sheet.dart';
+import '../../services/image_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<PremiumService>(context, listen: false).initialize();
+      Provider.of<JournalService>(context, listen: false).init();
     });
   }
 
@@ -65,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => const AddRecipeOptionsScreen(),
+      builder: (context) => const QuickActionBottomSheet(),
     );
   }
 
@@ -133,7 +137,7 @@ class _HomeView extends StatelessWidget {
     return Consumer<UserProvider>(builder: (context, userProvider, child) {
       final matches = userProvider.recipeMatches;
       final username = userProvider.username ?? 'Chef';
-      const avatarUrl = ''; 
+      final avatarUrl = ImageService().getUserAvatarUrl(username); 
 
       return CustomScrollView(
         slivers: [
@@ -215,9 +219,8 @@ class _HomeView extends StatelessWidget {
                     final match = matches[index];
                     final recipe = match.recipe;
                     return RecipeCardHorizontal(
-                      title: recipe.title,
-                      imageUrl: "https://source.unsplash.com/random/800x600/?food,${recipe.title.replaceAll(' ', ',')}", 
-                      time: "${recipe.cookTime}m",
+                      recipe: recipe,
+                      time: recipe.cookTime != null ? "${recipe.cookTime}m" : null,
                       calories: "350 kcal", 
                       matchPercentage: match.matchPercentage.round(),
                       onTap: () {

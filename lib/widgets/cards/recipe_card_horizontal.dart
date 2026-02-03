@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../models/recipe.dart';
+import '../images/smart_recipe_image.dart';
+import '../../services/image_service.dart';
 
 class RecipeCardHorizontal extends StatelessWidget {
-  final String title;
-  final String imageUrl;
-  final String time;
-  final String calories;
+  final Recipe recipe;
+  final String? time;
+  final String? calories;
   final int matchPercentage;
   final VoidCallback onTap;
 
   const RecipeCardHorizontal({
     super.key,
-    required this.title,
-    required this.imageUrl,
-    required this.time,
-    required this.calories,
+    required this.recipe,
+    this.time,
+    this.calories,
     required this.matchPercentage,
     required this.onTap,
   });
@@ -45,72 +44,61 @@ class RecipeCardHorizontal extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Image Section
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: SizedBox(
-                    height: 140,
-                    width: double.infinity,
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(color: Colors.white),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: AppColors.freshMint.withOpacity(0.2),
-                        child: const Icon(LucideIcons.image, color: AppColors.freshMint),
-                      ),
+            SizedBox(
+              height: 140,
+              width: double.infinity,
+              child: SmartRecipeImage(
+                recipe: recipe,
+                size: ImageSize.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                fit: BoxFit.cover,
+              ),
+            ),
+             // Match Badge
+            if (matchPercentage > 0)
+              Transform.translate(
+                offset: const Offset(-12, -132), // Manually positioning over the image
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(LucideIcons.sparkles, size: 12, color: AppColors.warmPeach),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$matchPercentage%',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.charcoal,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                // Match Badge
-                if (matchPercentage > 0)
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(LucideIcons.sparkles, size: 12, color: AppColors.warmPeach),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$matchPercentage%',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.charcoal,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+              ),
             
             // Content Section
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    recipe.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.titleMedium,
@@ -118,9 +106,12 @@ class RecipeCardHorizontal extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _buildInfoChip(LucideIcons.clock, time),
-                      const SizedBox(width: 8),
-                      _buildInfoChip(LucideIcons.flame, calories),
+                      if (time != null || recipe.cookTime != null)
+                        _buildInfoChip(LucideIcons.clock, time ?? '${recipe.cookTime ?? 15}m'),
+                      if (calories != null) ...[
+                        const SizedBox(width: 8),
+                        _buildInfoChip(LucideIcons.flame, calories!),
+                      ]
                     ],
                   ),
                 ],

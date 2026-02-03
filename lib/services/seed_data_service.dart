@@ -14,7 +14,7 @@ class SeedDataService {
         'cookTime': 10,
         'difficulty': 'Easy',
         'calories': 320,
-        'imagePath': 'assets/images/scrambled_eggs.jpg', // Placeholder
+
         'source': 'Crave Chef',
         'tags': ['Quick', 'Easy', 'Breakfast', 'Healthy'],
         'createdAt': FieldValue.serverTimestamp(),
