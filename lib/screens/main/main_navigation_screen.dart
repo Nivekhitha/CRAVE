@@ -42,6 +42,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       label: 'Journal',
       screen: const JournalHubScreen(),
       isPremium: true,
+      featureId: 'journal',
+      premiumTitle: 'Food Journal',
+      premiumDescription: 'Track your meals and nutrition with detailed insights',
     ),
     NavigationTab(
       icon: Icons.person_outline,
@@ -89,7 +92,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         },
         children: _tabs.map((tab) {
           if (tab.isPremium) {
-            return JournalGate(child: tab.screen);
+            return PremiumGate(
+              featureId: tab.featureId!,
+              title: tab.premiumTitle,
+              description: tab.premiumDescription,
+              child: tab.screen,
+            );
           }
           return tab.screen;
         }).toList(),
@@ -258,6 +266,9 @@ class NavigationTab {
   final String label;
   final Widget screen;
   final bool isPremium;
+  final String? featureId;
+  final String? premiumTitle;
+  final String? premiumDescription;
 
   NavigationTab({
     required this.icon,
@@ -265,6 +276,9 @@ class NavigationTab {
     required this.label,
     required this.screen,
     this.isPremium = false,
+    this.featureId,
+    this.premiumTitle,
+    this.premiumDescription,
   });
 }
 

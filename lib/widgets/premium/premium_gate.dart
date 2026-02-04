@@ -24,6 +24,15 @@ class PremiumGate extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<PremiumService>(
       builder: (context, premiumService, _) {
+        // Show loader until premium service is initialized
+        if (!premiumService.isInitialized) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
         // If user can access the feature, show the content
         if (premiumService.canUseFeature(featureId)) {
           return child;

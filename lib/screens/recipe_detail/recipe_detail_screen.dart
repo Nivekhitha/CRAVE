@@ -4,6 +4,7 @@ import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
 import '../../models/recipe.dart';
+import '../cooking/cooking_session_screen.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -387,34 +388,70 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
               ),
 
-              // Floating Action Button
+              // Floating Action Buttons
               Positioned(
                 bottom: 24,
                 left: 24,
                 right: 24,
-                child: ElevatedButton(
-                  onPressed: () {
-                    userProvider.completeCooking();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Recipe completed! 🎉')),
-                    );
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    elevation: 8,
-                  ),
-                  child: Text(
-                    'Cook Today',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.bold,
+                child: Row(
+                  children: [
+                    // Start Cooking Button
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CookingSessionScreen(recipe: recipe),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.play_arrow, size: 24),
+                        label: const Text('Start Cooking'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 8,
+                        ),
+                      ),
                     ),
-                  ),
+                    
+                    const SizedBox(width: 12),
+                    
+                    // Cook Today Button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          userProvider.completeCooking();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Recipe completed! 🎉')),
+                          );
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 8,
+                        ),
+                        child: Text(
+                          'Save',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: AppColors.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

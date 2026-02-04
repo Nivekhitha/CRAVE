@@ -45,6 +45,10 @@ dependencies:
   cached_network_image: ^3.3.0
   shimmer: ^3.0.0
   lucide_icons: ^0.257.0
+  
+  # Cooking Mode Features
+  flutter_tts: ^4.0.2
+  wakelock: ^0.6.2
 
 dev_dependencies:
   flutter_test:

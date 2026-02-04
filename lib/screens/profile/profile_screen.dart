@@ -48,8 +48,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildHeader() {
-    return Consumer<PremiumService>(
-      builder: (context, premiumService, _) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: context.read<PremiumService>().isPremium,
+      builder: (context, isPremium, _) {
         return Row(
           children: [
             Stack(
@@ -70,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ),
                 
-                if (premiumService.isPremium)
+                if (isPremium)
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -108,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      if (premiumService.isPremium) ...[
+                      if (isPremium) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -278,12 +279,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildPremiumSection() {
-    return Consumer<PremiumService>(
-      builder: (context, premiumService, _) {
-        if (premiumService.isPremium) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: context.read<PremiumService>().isPremium,
+      builder: (context, isPremium, _) {
+        if (isPremium) {
           return _buildPremiumActiveCard();
         } else {
-          return _buildUpgradeCard(premiumService);
+          return _buildUpgradeCard();
         }
       },
     );
@@ -363,7 +365,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildUpgradeCard(PremiumService premiumService) {
+  Widget _buildUpgradeCard() {
+    final premiumService = context.read<PremiumService>();
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

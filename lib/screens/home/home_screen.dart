@@ -8,6 +8,7 @@ import '../../services/premium_service.dart';
 import '../../services/firestore_service.dart'; 
 import '../../services/journal_service.dart'; 
 import '../../services/nutrition_service.dart';
+import '../../widgets/premium/premium_gate.dart';
 
 // Screens
 import '../discovery/discovery_screen.dart'; 
@@ -21,6 +22,8 @@ import '../cooking_journey/cooking_journey_screen.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 import '../journal/journal_screen.dart'; 
 import '../nutrition/nutrition_dashboard_screen.dart';
+import '../meal_planning/meal_planning_screen.dart';
+import '../dietitian/ai_dietitian_chat_screen.dart';
 
 // New Widgets
 import '../../widgets/home/home_header.dart';
@@ -159,14 +162,30 @@ class _HomeView extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: NutritionSnapshotCard(
-                showDetails: false,
+              child: GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context, 
-                    MaterialPageRoute(builder: (_) => const NutritionDashboardScreen())
+                    MaterialPageRoute(
+                      builder: (_) => NutritionGate(
+                        child: const NutritionDashboardScreen(),
+                      ),
+                    ),
                   );
                 },
+                child: NutritionSnapshotCard(
+                  showDetails: false,
+                  onTap: () {
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(
+                        builder: (_) => NutritionGate(
+                          child: const NutritionDashboardScreen(),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),

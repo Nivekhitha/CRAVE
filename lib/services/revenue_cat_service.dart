@@ -3,11 +3,20 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// Result wrapper for RevenueCat operations
+class RevenueCatResult<T> {
+  final bool isSuccess;
+  final T? data;
+  final String? error;
+
+  RevenueCatResult.success(this.data) : isSuccess = true, error = null;
+  RevenueCatResult.error(this.error) : isSuccess = false, data = null;
+}
+
 /// A clean, modular service for handling RevenueCat subscriptions.
 /// Wraps the official SDK to provide a simplified interface for the app.
+/// NO mock logic - only real RevenueCat operations.
 class RevenueCatService {
-  // Key should ideally be in .env, but for now we keep it here for simplicity
-  // unless .env is fully set up.
   static const _androidApiKey = 'goog_enfahxXZMWZpQLwdfVyPsWTGASG';
 
   static final RevenueCatService _instance = RevenueCatService._internal();
@@ -18,8 +27,11 @@ class RevenueCatService {
   bool get isInitialized => _isInitialized;
 
   /// Initialize the RevenueCat SDK.
-  Future<void> init(String? userId) async {
-    if (_isInitialized || kIsWeb) return;
+  /// Returns success/error status only - no mock logic.
+  Future<RevenueCatResult<void>> init(String? userId) async {
+    if (_isInitialized || kIsWeb) {
+      return RevenueCatResult.success(null);
+    }
 
     try {
       if (kDebugMode) {
@@ -37,81 +49,133 @@ class RevenueCatService {
       await Purchases.configure(configuration);
       _isInitialized = true;
       debugPrint('✅ RevenueCat Initialized');
+      return RevenueCatResult.success(null);
     } catch (e) {
       debugPrint('❌ RevenueCat Initialization Error: $e');
+      return RevenueCatResult.error('Failed to initialize RevenueCat: $e');
     }
   }
 
-  /// Fetches the current offering and returns the monthly package.
-  Future<Package?> getMonthlyPackage() async {
-    if (kIsWeb) return null;
+  /// Fetches current offerings and returns result with status.
+  Future<RevenueCatResult<Offerings>> getOfferings() async {
+    if (kIsWeb) {
+      return RevenueCatResult.error('RevenueCat not supported on web');
+    }
+    
+    if (!_isInitialized) {
+      return RevenueCatResult.error('RevenueCat not initialized');
+    }
+
     try {
       Offerings offerings = await Purchases.getOfferings();
       
       // Log offerings for debugging
       if (offerings.current == null && offerings.all.isEmpty) {
         debugPrint('⚠️ No offerings found in RevenueCat. Check Console configuration.');
+        return RevenueCatResult.error('No offerings configured');
       }
 
-      // "default" is the identifier for your current offering
-      if (offerings.current != null && offerings.current?.monthly != null) {
-        return offerings.current!.monthly;
-      }
+      debugPrint('✅ Retrieved ${offerings.all.length} offerings');
+      return RevenueCatResult.success(offerings);
     } catch (e) {
       debugPrint('❌ Error fetching offerings: $e');
+      return RevenueCatResult.error('Failed to fetch offerings: $e');
     }
-    return null;
+  }
+
+  /// Fetches the current offering and returns the monthly package.
+  Future<RevenueCatResult<Package>> getMonthlyPackage() async {
+    final offeringsResult = await getOfferings();
+    if (!offeringsResult.isSuccess) {
+      return RevenueCatResult.error(offeringsResult.error);
+    }
+
+    final offerings = offeringsResult.data!;
+    if (offerings.current?.monthly != null) {
+      return RevenueCatResult.success(offerings.current!.monthly!);
+    }
+
+    return RevenueCatResult.error('Monthly package not found');
   }
 
   /// Fetches the current offering and returns the yearly package.
-  Future<Package?> getYearlyPackage() async {
-    if (kIsWeb) return null;
-    try {
-      Offerings offerings = await Purchases.getOfferings();
-      
-      if (offerings.current != null && offerings.current?.annual != null) {
-        return offerings.current!.annual;
-      }
-    } catch (e) {
-      debugPrint('❌ Error fetching yearly package: $e');
+  Future<RevenueCatResult<Package>> getYearlyPackage() async {
+    final offeringsResult = await getOfferings();
+    if (!offeringsResult.isSuccess) {
+      return RevenueCatResult.error(offeringsResult.error);
     }
-    return null;
+
+    final offerings = offeringsResult.data!;
+    if (offerings.current?.annual != null) {
+      return RevenueCatResult.success(offerings.current!.annual!);
+    }
+
+    return RevenueCatResult.error('Yearly package not found');
   }
-  Future<bool> purchasePackage(Package package) async {
-    if (kIsWeb) return false;
+  /// Attempts to purchase a package.
+  /// Returns success/error status only.
+  Future<RevenueCatResult<CustomerInfo>> purchasePackage(Package package) async {
+    if (kIsWeb) {
+      return RevenueCatResult.error('Purchases not supported on web');
+    }
+    
+    if (!_isInitialized) {
+      return RevenueCatResult.error('RevenueCat not initialized');
+    }
+
     try {
       CustomerInfo customerInfo = await Purchases.purchasePackage(package);
-      return _checkEntitlement(customerInfo);
+      debugPrint('✅ Purchase completed successfully');
+      return RevenueCatResult.success(customerInfo);
     } catch (e) {
       debugPrint('❌ Purchase Error: $e');
-      return false;
+      return RevenueCatResult.error('Purchase failed: $e');
     }
   }
 
-  /// Checks if the user has an active "CRAVE Pro" entitlement.
-  Future<bool> isPremiumUser() async {
-    if (kIsWeb) return false;
+  /// Checks if the user has an active premium entitlement.
+  /// Returns success/error status with boolean result.
+  Future<RevenueCatResult<bool>> isPremiumUser() async {
+    if (kIsWeb) {
+      return RevenueCatResult.error('RevenueCat not supported on web');
+    }
+    
+    if (!_isInitialized) {
+      return RevenueCatResult.error('RevenueCat not initialized');
+    }
+
     try {
       CustomerInfo customerInfo = await Purchases.getCustomerInfo();
-      return _checkEntitlement(customerInfo);
+      final isPremium = _checkEntitlement(customerInfo);
+      return RevenueCatResult.success(isPremium);
     } catch (e) {
       debugPrint('❌ Entitlement Check Error: $e');
-      return false;
+      return RevenueCatResult.error('Failed to check premium status: $e');
     }
   }
 
   /// Restores previous purchases.
-  Future<bool> restorePurchases() async {
-    if (kIsWeb) return false;
+  /// Returns success/error status with boolean result.
+  Future<RevenueCatResult<bool>> restorePurchases() async {
+    if (kIsWeb) {
+      return RevenueCatResult.error('Purchases not supported on web');
+    }
+    
+    if (!_isInitialized) {
+      return RevenueCatResult.error('RevenueCat not initialized');
+    }
+
     try {
       CustomerInfo customerInfo = await Purchases.restorePurchases();
-      return _checkEntitlement(customerInfo);
+      final isPremium = _checkEntitlement(customerInfo);
+      debugPrint('✅ Restore completed, premium status: $isPremium');
+      return RevenueCatResult.success(isPremium);
     } catch (e) {
       debugPrint('❌ Restore Error: $e');
-      return false;
+      return RevenueCatResult.error('Failed to restore purchases: $e');
     }
   }
-  
+  /// Internal method to check entitlement status
   bool _checkEntitlement(CustomerInfo info) {
     // Check for 'CRAVE Pro', 'pro', 'premium', or 'plus'
     // in case entitlement name changes in dashboard

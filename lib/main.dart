@@ -56,8 +56,17 @@ Future<void> main() async {
         // Core providers
         ChangeNotifierProvider(create: (_) => UserProvider()),
         
-        // Premium system
-        ChangeNotifierProvider(create: (_) => PremiumService()),
+        // Premium system - initialize immediately
+        ChangeNotifierProvider(
+          create: (_) {
+            final premiumService = PremiumService();
+            // Initialize asynchronously but don't block app startup
+            premiumService.init().catchError((e) {
+              debugPrint('❌ PremiumService init error: $e');
+            });
+            return premiumService;
+          },
+        ),
         
         // Data services
         ChangeNotifierProvider(create: (_) => JournalService()),

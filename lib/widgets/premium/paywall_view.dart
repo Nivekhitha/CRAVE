@@ -472,13 +472,19 @@ class _PaywallViewState extends State<PaywallView>
 
   Future<void> _handlePurchase(PremiumService premiumService) async {
     try {
-      final result = await premiumService.unlockPremium(isYearly: _isYearly);
+      final result = await premiumService.purchasePremium(isYearly: _isYearly);
       
       if (result.isSuccess && mounted) {
         Navigator.pop(context);
+        
+        // Show appropriate message based on mock mode
+        final message = premiumService.isMockMode 
+            ? '🎉 Premium unlocked (demo mode)!'
+            : '🎉 Welcome to Premium!';
+            
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 Welcome to Premium!'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.green,
           ),
         );
