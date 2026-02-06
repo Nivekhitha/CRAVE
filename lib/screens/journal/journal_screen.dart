@@ -21,7 +21,7 @@ class JournalScreen extends StatelessWidget {
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
-          body: premium.isPremium
+          body: premium.isPremium.value
               ? const JournalDashboard()
               : const PaywallView(
                   featureId: 'journal',

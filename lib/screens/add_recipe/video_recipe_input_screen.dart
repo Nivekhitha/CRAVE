@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../services/video_recipe_service.dart';
-import '../../services/url_recipe_extraction_service.dart';
+import '../../services/recipe_extraction_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/premium_service.dart';
 import '../../models/recipe.dart';
+import '../../models/extraction_result.dart';
+import '../../widgets/extraction/extraction_progress_widget.dart';
 import '../premium/paywall_screen.dart';
 
 enum VideoExtractionState {
@@ -27,12 +29,19 @@ class VideoRecipeInputScreen extends StatefulWidget {
 class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
   final TextEditingController _urlController = TextEditingController();
   final VideoRecipeService _videoService = VideoRecipeService();
-  final UrlRecipeExtractionService _instagramService = UrlRecipeExtractionService();
+  final RecipeExtractionService _extractionService = RecipeExtractionService();
   final FirestoreService _firestore = FirestoreService();
   final AuthService _auth = AuthService();
 
   VideoExtractionState _state = VideoExtractionState.idle;
   String _errorMessage = '';
+  
+  // Progressive extraction state
+  String _currentStep = '';
+  List<String> _completedSteps = [];
+  List<String> _warnings = [];
+  int? _recipesFound;
+  bool _isComplete = false;
   
   // Editable fields for preview
   final TextEditingController _titleController = TextEditingController();
@@ -71,7 +80,7 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
 
     // Check premium status and extraction limit
     final premiumService = Provider.of<PremiumService>(context, listen: false);
-    final isPremium = premiumService.isPremium;
+    final isPremium = premiumService.isPremium.value;
 
     if (!isPremium) {
       // Check monthly extraction count
@@ -114,89 +123,135 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
     setState(() {
       _state = VideoExtractionState.extracting;
       _errorMessage = '';
+      _currentStep = 'Preparing extraction...';
+      _completedSteps = [];
+      _warnings = [];
+      _recipesFound = null;
+      _isComplete = false;
     });
 
     try {
-      Map<String, dynamic> recipeData;
-
-      if (url.contains('instagram.com')) {
-         // Instagram Extraction
-         final recipes = await _instagramService.extractFromInstagram(url);
-         if (recipes.isEmpty) {
-           throw Exception('No recipes found in this post.');
-         }
-         // For MVP, just take the first one
-         // TODO: Show selection dialog if > 1
-         recipeData = recipes.first.toMap();
-      } else {
-         // YouTube Extraction (Default)
-         final result = await _videoService.extractFromYouTube(url);
-         if (result == null) throw Exception('Failed to extract from YouTube.');
-         recipeData = result;
-      }
-
-      // Populate editable fields
-      _titleController.text = recipeData['title'] ?? '';
-      _descriptionController.text = recipeData['description'] ?? '';
-      
-      // Handle int/string flexible parsing
-      _servingsController.text = recipeData['servings']?.toString() ?? '';
-      _prepTimeController.text = recipeData['prepTime']?.toString() ?? '';
-      _cookTimeController.text = recipeData['cookTime']?.toString() ?? '';
-      
-      _selectedDifficulty = recipeData['difficulty'] ?? 'Medium';
-      if (!['Easy', 'Medium', 'Hard'].contains(_selectedDifficulty)) {
-        _selectedDifficulty = 'Medium';
-      }
-
-      // Clear existing controllers
-      for (var controller in _ingredientControllers) {
-        controller.dispose();
-      }
-      for (var controller in _instructionControllers) {
-        controller.dispose();
-      }
-      _ingredientControllers.clear();
-      _instructionControllers.clear();
-
-      // Populate ingredients
-      final ingredients = recipeData['ingredients'];
-      if (ingredients is List) {
-        for (var ingredient in ingredients) {
-          final controller = TextEditingController(text: ingredient.toString());
-          _ingredientControllers.add(controller);
-        }
-      } else if (ingredients is String) {
-         // Handle string case just in case
-         _ingredientControllers.add(TextEditingController(text: ingredients));
-      }
-
-      // Populate instructions
-      final instructions = recipeData['instructions'];
-      if (instructions is List) {
-        for (var instruction in instructions) {
-          final controller = TextEditingController(text: instruction.toString());
-          _instructionControllers.add(controller);
-        }
-      } else if (instructions is String) {
-         // Handle newline separated string
-         final split = instructions.split('\n');
-         for (var s in split) {
-           if (s.trim().isNotEmpty) {
-             _instructionControllers.add(TextEditingController(text: s.trim()));
-           }
-         }
-      }
+      // Use robust extraction service
+      final result = await _extractionService.extractRecipe(
+        url: url,
+        onProgress: (step) {
+          if (mounted) {
+            setState(() {
+              // Move current step to completed if it's not the first step
+              if (_currentStep.isNotEmpty && !_currentStep.contains('Preparing')) {
+                _completedSteps.add(_currentStep);
+              }
+              _currentStep = step;
+              
+              // Update recipe count if found
+              if (step.contains('recipe') && step.contains('found')) {
+                final match = RegExp(r'(\d+) recipe').firstMatch(step);
+                if (match != null) {
+                  _recipesFound = int.tryParse(match.group(1) ?? '0');
+                }
+              }
+            });
+          }
+        },
+      );
 
       if (!mounted) return;
+
+      // Handle result
       setState(() {
-        _state = VideoExtractionState.preview;
+        _isComplete = true;
+        _warnings = result.warnings;
+        _recipesFound = result.recipeCount;
+        
+        if (result.hasRecipes) {
+          _currentStep = 'Extraction complete! Found ${result.recipeCount} recipe${result.recipeCount == 1 ? '' : 's'}.';
+        } else {
+          _currentStep = 'No recipes found in this video.';
+        }
       });
+
+      // Small delay to show completion
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      if (!mounted) return;
+
+      if (result.hasRecipes) {
+        // Use the first recipe for editing
+        final recipe = result.recipes.first;
+        _populateEditableFields(recipe.toMap());
+        
+        setState(() {
+          _state = VideoExtractionState.preview;
+        });
+      } else {
+        // Show error with helpful message
+        setState(() {
+          _state = VideoExtractionState.error;
+          _errorMessage = result.warnings.isNotEmpty 
+              ? result.warnings.join('\n')
+              : 'No recipes found in this video. Try a different video or enter the recipe manually.';
+        });
+      }
+
     } catch (e) {
+      if (!mounted) return;
+      
       setState(() {
         _state = VideoExtractionState.error;
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
+    }
+  }
+
+  void _populateEditableFields(Map<String, dynamic> recipeData) {
+    _titleController.text = recipeData['title'] ?? '';
+    _descriptionController.text = recipeData['description'] ?? '';
+    
+    // Handle int/string flexible parsing
+    _servingsController.text = recipeData['servings']?.toString() ?? '';
+    _prepTimeController.text = recipeData['prepTime']?.toString() ?? '';
+    _cookTimeController.text = recipeData['cookTime']?.toString() ?? '';
+    
+    _selectedDifficulty = recipeData['difficulty'] ?? 'Medium';
+    if (!['Easy', 'Medium', 'Hard'].contains(_selectedDifficulty)) {
+      _selectedDifficulty = 'Medium';
+    }
+
+    // Clear existing controllers
+    for (var controller in _ingredientControllers) {
+      controller.dispose();
+    }
+    for (var controller in _instructionControllers) {
+      controller.dispose();
+    }
+    _ingredientControllers.clear();
+    _instructionControllers.clear();
+
+    // Populate ingredients
+    final ingredients = recipeData['ingredients'];
+    if (ingredients is List) {
+      for (var ingredient in ingredients) {
+        final controller = TextEditingController(text: ingredient.toString());
+        _ingredientControllers.add(controller);
+      }
+    } else if (ingredients is String) {
+       _ingredientControllers.add(TextEditingController(text: ingredients));
+    }
+
+    // Populate instructions
+    final instructions = recipeData['instructions'];
+    if (instructions is List) {
+      for (var instruction in instructions) {
+        final controller = TextEditingController(text: instruction.toString());
+        _instructionControllers.add(controller);
+      }
+    } else if (instructions is String) {
+       final split = instructions.split('\n');
+       for (var s in split) {
+         if (s.trim().isNotEmpty) {
+           _instructionControllers.add(TextEditingController(text: s.trim()));
+         }
+       }
     }
   }
 
@@ -440,50 +495,28 @@ class _VideoRecipeInputScreenState extends State<VideoRecipeInputScreen> {
   }
 
   Widget _buildExtractingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.1),
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                )
-              ],
-            ),
-            child: const CircularProgressIndicator(strokeWidth: 3),
-          ),
-          const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Analyzing video...',
-                  style: AppTextStyles.bodyLarge.copyWith(color: AppColors.primary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'This may take 30-60 seconds',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        const Spacer(),
+        ExtractionProgressWidget(
+          currentStep: _currentStep,
+          completedSteps: _completedSteps,
+          warnings: _warnings,
+          recipesFound: _recipesFound,
+          isComplete: _isComplete,
+          onCancel: _isComplete ? null : () {
+            setState(() {
+              _state = VideoExtractionState.idle;
+              _currentStep = '';
+              _completedSteps = [];
+              _warnings = [];
+              _recipesFound = null;
+              _isComplete = false;
+            });
+          },
+        ),
+        const Spacer(),
+      ],
     );
   }
 

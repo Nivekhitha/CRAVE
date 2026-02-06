@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:wakelock/wakelock.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../models/recipe.dart';
 import '../../services/cooking_session_service.dart';
+import '../../services/user_stats_service.dart';
 
 class CookingSessionScreen extends StatefulWidget {
   final Recipe recipe;
@@ -28,7 +29,7 @@ class _CookingSessionScreenState extends State<CookingSessionScreen> {
     _cookingService = CookingSessionService();
     
     // Keep screen awake during cooking
-    Wakelock.enable();
+    WakelockPlus.enable();
     
     // Hide status bar for fullscreen experience
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -42,7 +43,7 @@ class _CookingSessionScreenState extends State<CookingSessionScreen> {
   @override
   void dispose() {
     // Restore normal UI and screen behavior
-    Wakelock.disable();
+    WakelockPlus.disable();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _cookingService.dispose();
     super.dispose();
@@ -415,7 +416,11 @@ class _CookingSessionScreenState extends State<CookingSessionScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  // Track recipe completion
+                  context.read<UserStatsService>().recordRecipeCooked();
+                  Navigator.pop(context);
+                },
                 icon: const Icon(Icons.home),
                 label: const Text('Back to Recipe'),
                 style: ElevatedButton.styleFrom(

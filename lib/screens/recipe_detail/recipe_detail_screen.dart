@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
+import '../../services/user_stats_service.dart';
 import '../../models/recipe.dart';
 import '../cooking/cooking_session_screen.dart';
 
@@ -428,6 +429,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           userProvider.completeCooking();
+                          // Track recipe completion
+                          context.read<UserStatsService>().recordRecipeCooked();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Recipe completed! 🎉')),
                           );

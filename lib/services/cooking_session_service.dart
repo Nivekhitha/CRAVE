@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/cooking_step.dart';
 import '../models/recipe.dart';
 
@@ -117,8 +118,8 @@ class CookingSessionService extends ChangeNotifier {
     
     // Announce timer completion
     if (hasNextStep) {
-      final nextStep = _steps[_currentStepIndex + 1];
-      await _speak("Time's up! Next step: ${nextStep.text}");
+      final nextStepData = _steps[_currentStepIndex + 1];
+      await _speak("Time's up! Next step: ${nextStepData.text}");
       
       // Auto-advance to next step after a brief pause
       await Future.delayed(const Duration(seconds: 2));

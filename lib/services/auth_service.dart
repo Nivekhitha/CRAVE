@@ -1,22 +1,37 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseAuth? _auth;
 
   // Singleton pattern
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
-  AuthService._internal();
+  AuthService._internal() {
+    _initializeAuth();
+  }
+
+  void _initializeAuth() {
+    try {
+      // Check if Firebase is initialized
+      Firebase.app();
+      _auth = FirebaseAuth.instance;
+      debugPrint('✅ AuthService initialized with Firebase');
+    } catch (e) {
+      debugPrint('⚠️ AuthService: Firebase not available: $e');
+      _auth = null;
+    }
+  }
 
   // Get current user
-  User? get currentUser => _auth.currentUser;
+  User? get currentUser => _auth?.currentUser;
 
   // Get User ID (or null if not logged in)
   String? get userId => currentUser?.uid;
 
   // Stream of auth changes
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get authStateChanges => _auth?.authStateChanges() ?? Stream.value(null);
 
   // Check if user is anonymous
   bool get isAnonymous => currentUser?.isAnonymous ?? false;
@@ -24,11 +39,18 @@ class AuthService {
   // Get user email (null for anonymous users)
   String? get userEmail => currentUser?.email;
 
+  // Check if Firebase Auth is available
+  bool get isAvailable => _auth != null;
+
   // Sign up with Email & Password
   Future<AuthResult> signUpWithEmailAndPassword(
       String email, String password) async {
+    if (_auth == null) {
+      return AuthResult.error('Authentication service not available');
+    }
+    
     try {
-      final credential = await _auth.createUserWithEmailAndPassword(
+      final credential = await _auth!.createUserWithEmailAndPassword(
           email: email.trim(), password: password);
       debugPrint('✅ Email sign up successful: ${credential.user?.email}');
       return AuthResult.success(credential.user);
@@ -45,8 +67,12 @@ class AuthService {
   // Sign in with Email & Password
   Future<AuthResult> signInWithEmailAndPassword(
       String email, String password) async {
+    if (_auth == null) {
+      return AuthResult.error('Authentication service not available');
+    }
+    
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      final credential = await _auth!.signInWithEmailAndPassword(
           email: email.trim(), password: password);
       debugPrint('✅ Email sign in successful: ${credential.user?.email}');
       return AuthResult.success(credential.user);
@@ -62,8 +88,12 @@ class AuthService {
 
   // Anonymous sign in (fallback/guest option)
   Future<AuthResult> signInAnonymously() async {
+    if (_auth == null) {
+      return AuthResult.error('Authentication service not available');
+    }
+    
     try {
-      final userCredential = await _auth.signInAnonymously();
+      final userCredential = await _auth!.signInAnonymously();
       debugPrint(
           '✅ Signed in anonymously with UID: ${userCredential.user?.uid}');
       return AuthResult.success(userCredential.user);
@@ -79,8 +109,13 @@ class AuthService {
 
   // Sign Out
   Future<void> signOut() async {
+    if (_auth == null) {
+      debugPrint('⚠️ Auth service not available for sign out');
+      return;
+    }
+    
     try {
-      await _auth.signOut();
+      await _auth!.signOut();
       debugPrint('✅ User signed out successfully');
     } catch (e) {
       debugPrint('❌ Sign out error: $e');
@@ -90,8 +125,12 @@ class AuthService {
 
   // Password Reset
   Future<AuthResult> sendPasswordResetEmail(String email) async {
+    if (_auth == null) {
+      return AuthResult.error('Authentication service not available');
+    }
+    
     try {
-      await _auth.sendPasswordResetEmail(email: email.trim());
+      await _auth!.sendPasswordResetEmail(email: email.trim());
       debugPrint('✅ Password reset email sent to: $email');
       return AuthResult.success(null, message: 'Password reset email sent!');
     } on FirebaseAuthException catch (e) {
@@ -107,6 +146,10 @@ class AuthService {
   // Convert anonymous account to email/password
   Future<AuthResult> linkAnonymousWithEmailPassword(
       String email, String password) async {
+    if (_auth == null) {
+      return AuthResult.error('Authentication service not available');
+    }
+    
     try {
       if (currentUser == null || !currentUser!.isAnonymous) {
         return AuthResult.error('No anonymous user to link');

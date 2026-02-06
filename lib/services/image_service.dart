@@ -155,10 +155,13 @@ class ImageService {
         .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
         .replaceAll(' ', ',');
     
-    // LoremFlickr (free alternative to Unsplash Source)
-    // Use recipeId hash as lock to ensure consistent image for same recipe
-    final lock = recipeId != null ? recipeId.hashCode : DateTime.now().millisecondsSinceEpoch;
-    return 'https://loremflickr.com/800/600/food,$searchTerm?lock=$lock';
+    // Use Unsplash Source API for higher quality food images
+    // Format: https://source.unsplash.com/800x600/?food,pasta
+    // Use recipeId hash as seed for consistent images
+    final seed = recipeId != null ? recipeId.hashCode.abs() : DateTime.now().millisecondsSinceEpoch;
+    
+    // Unsplash Source provides high-quality, curated food photography
+    return 'https://source.unsplash.com/800x600/?food,$searchTerm&sig=$seed';
   }
 
   /// Generate placeholder image URL

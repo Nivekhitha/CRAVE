@@ -158,39 +158,40 @@ class _HomeView extends StatelessWidget {
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Nutrition Snapshot Card
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (_) => NutritionGate(
-                        child: const NutritionDashboardScreen(),
-                      ),
-                    ),
-                  );
-                },
-                child: NutritionSnapshotCard(
-                  showDetails: false,
-                  onTap: () {
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(
-                        builder: (_) => NutritionGate(
-                          child: const NutritionDashboardScreen(),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
+          // Nutrition Snapshot Card - REMOVED (available in Journal)
+          // Users can access nutrition dashboard from Journal tab
+          // SliverToBoxAdapter(
+          //   child: Padding(
+          //     padding: const EdgeInsets.symmetric(horizontal: 24),
+          //     child: GestureDetector(
+          //       onTap: () {
+          //         Navigator.push(
+          //           context, 
+          //           MaterialPageRoute(
+          //             builder: (_) => NutritionGate(
+          //               child: const NutritionDashboardScreen(),
+          //             ),
+          //           ),
+          //         );
+          //       },
+          //       child: NutritionSnapshotCard(
+          //         showDetails: false,
+          //         onTap: () {
+          //           Navigator.push(
+          //             context, 
+          //             MaterialPageRoute(
+          //               builder: (_) => NutritionGate(
+          //                 child: const NutritionDashboardScreen(),
+          //               ),
+          //             ),
+          //           );
+          //         },
+          //       ),
+          //     ),
+          //   ),
+          // ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          // const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
           // Vertical Hero Actions
           SliverToBoxAdapter(

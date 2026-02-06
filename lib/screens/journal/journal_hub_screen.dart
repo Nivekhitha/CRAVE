@@ -118,7 +118,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                 ),
               ],
             ),
-            if (premiumService.isPremium)
+            if (premiumService.isPremium.value)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(

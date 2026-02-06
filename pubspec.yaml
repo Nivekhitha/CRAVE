@@ -48,7 +48,10 @@ dependencies:
   
   # Cooking Mode Features
   flutter_tts: ^4.0.2
-  wakelock: ^0.6.2
+  wakelock_plus: ^1.2.8
+  
+  # Image handling
+  image_picker: ^1.0.4
 
 dev_dependencies:
   flutter_test:

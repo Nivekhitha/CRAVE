@@ -9,6 +9,9 @@ import 'services/premium_service.dart';
 import 'services/journal_service.dart';
 import 'services/meal_plan_service.dart';
 import 'services/nutrition_service.dart';
+import 'services/user_stats_service.dart';
+import 'services/extraction_cache_service.dart';
+import 'services/recipe_extraction_service.dart';
 import 'app/app.dart';
 import 'providers/user_provider.dart';
 import 'firebase_options.dart';
@@ -46,6 +49,15 @@ Future<void> main() async {
     debugPrint("⚠️ HiveService init error: $e");
   }
   
+  // Initialize extraction services
+  try {
+    await ExtractionCacheService().initialize();
+    await RecipeExtractionService().initialize();
+    debugPrint("✅ Extraction services initialized");
+  } catch (e) {
+    debugPrint("⚠️ Extraction services init error: $e");
+  }
+  
   if (kIsWeb) {
     debugPrint("⚠️ WARNING: RevenueCat is NOT supported on Web. Please run on Android for full features.");
   }
@@ -65,6 +77,18 @@ Future<void> main() async {
               debugPrint('❌ PremiumService init error: $e');
             });
             return premiumService;
+          },
+        ),
+        
+        // User statistics service
+        ChangeNotifierProvider(
+          create: (_) {
+            final statsService = UserStatsService();
+            // Initialize asynchronously
+            statsService.init().catchError((e) {
+              debugPrint('❌ UserStatsService init error: $e');
+            });
+            return statsService;
           },
         ),
         

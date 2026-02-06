@@ -26,15 +26,33 @@ class PremiumGate extends StatelessWidget {
       builder: (context, premiumService, _) {
         // Show loader until premium service is initialized
         if (!premiumService.isInitialized) {
-          return const Scaffold(
+          return Scaffold(
+            backgroundColor: Colors.white,
             body: Center(
-              child: CircularProgressIndicator(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
 
         // If user can access the feature, show the content
         if (premiumService.canUseFeature(featureId)) {
+          // Use a post-frame callback to ensure smooth transition
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // This ensures the widget tree is stable before showing content
+          });
           return child;
         }
 

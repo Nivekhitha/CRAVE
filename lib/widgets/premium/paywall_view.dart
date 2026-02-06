@@ -64,10 +64,14 @@ class _PaywallViewState extends State<PaywallView>
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🎨 PaywallView building with featureId: ${widget.featureId}');
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Consumer<PremiumService>(
         builder: (context, premiumService, child) {
+          debugPrint('🎨 PaywallView Consumer building - isInitialized: ${premiumService.isInitialized}, isPremium: ${premiumService.isPremium.value}');
+          
           return SafeArea(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -471,32 +475,52 @@ class _PaywallViewState extends State<PaywallView>
   }
 
   Future<void> _handlePurchase(PremiumService premiumService) async {
+    if (!mounted) return;
+    
     try {
       final result = await premiumService.purchasePremium(isYearly: _isYearly);
       
-      if (result.isSuccess && mounted) {
-        Navigator.pop(context);
+      if (!mounted) return;
+      
+      if (result.isSuccess) {
+        // Premium unlocked successfully - use safer navigation
+        if (mounted) {
+          // First show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(premiumService.isMockMode 
+                  ? '🎉 Premium unlocked (demo mode)!'
+                  : '🎉 Welcome to Premium!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          
+          // Then navigate after a short delay to ensure UI is stable
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          if (mounted) {
+            // Try to pop first (if we came from a specific screen)
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              // Otherwise go to main screen
+              Navigator.pushReplacementNamed(context, '/main');
+            }
+          }
+        }
         
-        // Show appropriate message based on mock mode
-        final message = premiumService.isMockMode 
-            ? '🎉 Premium unlocked (demo mode)!'
-            : '🎉 Welcome to Premium!';
-            
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
-          ),
-        );
       } else if (result.isCancelled) {
         // User cancelled - no action needed
-      } else if (result.error != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error!),
-            backgroundColor: Colors.red,
-          ),
-        );
+      } else if (result.error != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.error!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

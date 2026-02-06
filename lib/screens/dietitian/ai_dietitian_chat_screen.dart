@@ -665,19 +665,44 @@ class _AIDietitianChatScreenState extends State<AIDietitianChatScreen>
     String response;
     ChatMessageType messageType = ChatMessageType.text;
 
+    // Check for out-of-scope questions first
+    final lowerMessage = userMessage.toLowerCase();
+    final nutritionKeywords = ['nutrition', 'meal', 'food', 'recipe', 'diet', 'vitamin', 
+                               'calorie', 'protein', 'carb', 'fat', 'eat', 'cook', 'health',
+                               'weight', 'hydration', 'water', 'snack', 'breakfast', 'lunch', 
+                               'dinner', 'ingredient', 'vegetable', 'fruit'];
+    
+    final hasNutritionKeyword = nutritionKeywords.any((keyword) => lowerMessage.contains(keyword));
+    
+    // If no nutrition keywords found, it's likely off-topic
+    if (!hasNutritionKeyword) {
+      response = "I appreciate your question! However, I'm specifically designed to help with nutrition, meal planning, and healthy eating. 🍎\n\nFor now, I'm focusing on these four areas:\n• Nutrition analysis\n• Meal planning & recipes\n• Vitamin & mineral guidance\n• Healthy eating tips\n\nOther features are being developed for the future! How can I help you with your nutrition today?";
+      
+      setState(() {
+        _messages.add(
+          ChatMessage(
+            text: response,
+            isUser: false,
+            timestamp: DateTime.now(),
+            messageType: messageType,
+          ),
+        );
+        _isTyping = false;
+      });
+      _animationController.stop();
+      _scrollToBottom();
+      return;
+    }
+
     // Simple keyword-based responses (in production, use actual AI)
-    if (userMessage.toLowerCase().contains('nutrition') || 
-        userMessage.toLowerCase().contains('analyze')) {
+    if (lowerMessage.contains('nutrition') || lowerMessage.contains('analyze')) {
       response = "Based on your food journal today, you're doing well with protein intake! You've consumed enough calories, but I'd recommend adding more vegetables for vitamins and fiber. Your hydration could also be improved.";
       messageType = ChatMessageType.nutritionAnalysis;
-    } else if (userMessage.toLowerCase().contains('meal') || 
-               userMessage.toLowerCase().contains('recipe')) {
+    } else if (lowerMessage.contains('meal') || lowerMessage.contains('recipe')) {
       response = "Here are some healthy meal ideas based on your preferences:\n\n🥗 Mediterranean Quinoa Bowl - High in protein and fiber\n🐟 Baked Salmon with Vegetables - Rich in omega-3s\n🥙 Chickpea and Avocado Wrap - Plant-based protein\n\nWould you like detailed recipes for any of these?";
-    } else if (userMessage.toLowerCase().contains('vitamin') || 
-               userMessage.toLowerCase().contains('missing')) {
+    } else if (lowerMessage.contains('vitamin') || lowerMessage.contains('missing')) {
       response = "Looking at your recent meals, you might be low on:\n\n🥕 Vitamin A - Try adding carrots, sweet potatoes, or spinach\n🍊 Vitamin C - Include citrus fruits, berries, or bell peppers\n☀️ Vitamin D - Consider fatty fish or fortified foods\n\nShall I suggest specific foods to boost these vitamins?";
-    } else if (userMessage.toLowerCase().contains('weight') || 
-               userMessage.toLowerCase().contains('lose')) {
+    } else if (lowerMessage.contains('weight') || lowerMessage.contains('lose')) {
       response = "For healthy weight management, focus on:\n\n• Creating a moderate calorie deficit (300-500 calories)\n• Eating plenty of protein to maintain muscle\n• Including fiber-rich foods for satiety\n• Staying hydrated\n• Regular physical activity\n\nWould you like me to help plan meals that support your goals?";
     } else {
       response = "I'm here to help with nutrition advice! You can ask me about:\n\n• Analyzing your daily nutrition\n• Meal planning and recipes\n• Vitamin and mineral needs\n• Healthy eating tips\n• Weight management\n\nWhat would you like to know more about?";

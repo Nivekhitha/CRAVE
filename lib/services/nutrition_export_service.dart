@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'nutrition_service.dart';
@@ -266,6 +267,3 @@ ${snapshot.insights.isNotEmpty ? '💡 ' + snapshot.insights.first : ''}
     return '${date.day}/${date.month}/${date.year}';
   }
 }
-
-// Add missing import
-import 'dart:math' as math;

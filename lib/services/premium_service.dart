@@ -21,8 +21,9 @@ class PremiumService extends ChangeNotifier {
   static const String _hiveBoxName = 'premium_v1';
   static const String _trialBoxName = 'trial_v1';
   
-  final AuthService _auth = AuthService();
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  late final AuthService? _auth;
+  late final FirebaseFirestore? _db;
+  bool _firebaseAvailable = false;
   final RevenueCatService _rcService = RevenueCatService();
 
   // Single source of truth for premium status
@@ -103,7 +104,25 @@ class PremiumService extends ChangeNotifier {
     await _initHive();
     await _loadLocalPremiumStatus();
     
-    final userId = _auth.userId;
+    // Check if Firebase is available
+    try {
+      final authService = AuthService();
+      if (!authService.isAvailable) {
+        throw Exception('Firebase Auth not available');
+      }
+      _auth = authService;
+      _db = FirebaseFirestore.instance;
+      _firebaseAvailable = true;
+      debugPrint('✅ Firebase services available for PremiumService');
+    } catch (e) {
+      debugPrint('⚠️ Firebase not available for PremiumService: $e');
+      _auth = null;
+      _db = null;
+      _firebaseAvailable = false;
+      _isMockMode = true;
+    }
+    
+    final userId = _firebaseAvailable ? _auth?.userId : null;
     final rcInitResult = await _rcService.init(userId);
     
     if (rcInitResult.isSuccess) {
@@ -215,17 +234,15 @@ class PremiumService extends ChangeNotifier {
         final package = isYearly ? _yearlyPackage : _monthlyPackage;
         
         if (package != null) {
-          debugPrint("🛒 Attempting real purchase...");
           final purchaseResult = await _rcService.purchasePackage(package);
           
           if (purchaseResult.isSuccess) {
             _isPremiumNotifier.value = true;
+            notifyListeners();
             await _savePremiumStatusLocally();
             _savePremiumStatusToFirestore(); // Fire-and-forget
-            debugPrint('✅ Premium unlocked successfully with RevenueCat!');
             return PurchaseResult.success();
           } else {
-            debugPrint("⚠️ Real purchase failed: ${purchaseResult.error}");
             // In production, we'd return the error
             // In debug mode, fall through to mock
             if (!kDebugMode) return PurchaseResult.error(purchaseResult.error ?? 'Purchase failed');
@@ -234,21 +251,24 @@ class PremiumService extends ChangeNotifier {
       }
 
       // 2. Mock Purchase Flow (Debug/Demo Mode)
-      debugPrint('🛡️ Using mock purchase flow (Demo Mode)');
-      
       // Simulate network delay
       await Future.delayed(const Duration(seconds: 1));
       
       // Grant premium access locally
       _isPremiumNotifier.value = true;
+      
+      // Immediately notify all listeners
+      notifyListeners();
+      
+      // Save to local storage
       await _savePremiumStatusLocally();
-      _savePremiumStatusToFirestore(); // Fire-and-forget
-      debugPrint('✅ Premium unlocked via mock flow!');
+      
+      // Save to Firestore (fire-and-forget)
+      _savePremiumStatusToFirestore();
       
       return PurchaseResult.success();
       
     } catch (e) {
-      debugPrint('❌ Premium unlock failed: $e');
       return PurchaseResult.error('Purchase failed: $e');
     } finally {
       _isLoading = false;
@@ -337,11 +357,16 @@ class PremiumService extends ChangeNotifier {
 
   /// Save premium status to Firestore
   Future<void> _savePremiumStatusToFirestore() async {
+    if (!_firebaseAvailable) {
+      debugPrint('⚠️ Firebase not available, skipping Firestore save');
+      return;
+    }
+    
     try {
-      final userId = _auth.userId;
+      final userId = _auth?.userId;
       if (userId == null) return;
 
-      await _db.collection('users').doc(userId).set({
+      await _db!.collection('users').doc(userId).set({
         'isPremium': _isPremiumNotifier.value,
         'premiumUnlockedAt': _isPremiumNotifier.value ? FieldValue.serverTimestamp() : null,
       }, SetOptions(merge: true));
@@ -362,17 +387,17 @@ class PremiumService extends ChangeNotifier {
       case 'ai_dietitian':
         return canUseAIDietitian;
       case 'unlimited_recipes':
-        return _isPremium;
+        return _isPremiumNotifier.value;
       case 'video_recipes':
-        return _isPremium;
+        return _isPremiumNotifier.value;
       case 'fuzzy_matching':
-        return _isPremium;
+        return _isPremiumNotifier.value;
       case 'auto_grocery':
-        return _isPremium;
+        return _isPremiumNotifier.value;
       case 'export_recipes':
-        return _isPremium;
+        return _isPremiumNotifier.value;
       case 'advanced_filters':
-        return _isPremium;
+        return _isPremiumNotifier.value;
       default:
         return true; // Basic features are free
     }

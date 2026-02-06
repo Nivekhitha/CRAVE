@@ -45,8 +45,9 @@ Serve hot with rice.
   ];
   
   for (final testCase in testCases) {
-    final duration = CookingStep._extractDuration(testCase);
-    final result = duration != null ? '${duration.inMinutes} min' : 'No timer';
+    final steps = CookingStep.parseSteps(testCase);
+    final step = steps.isNotEmpty ? steps.first : null;
+    final result = step?.duration != null ? '${step!.duration!.inMinutes} min' : 'No timer';
     print('   "$testCase" → $result');
   }
   

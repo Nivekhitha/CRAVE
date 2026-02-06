@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../services/journal_service.dart';
+import '../../services/nutrition_service.dart';
+import '../../services/nutrition_export_service.dart';
 import '../../widgets/premium/premium_gate.dart';
 
 class NutritionDashboardScreen extends StatefulWidget {
@@ -489,113 +491,139 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
   }
 
   Widget _buildHydrationTracker() {
-    const currentGlasses = 6;
-    const targetGlasses = 8;
-    
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.withOpacity(0.1),
-            Colors.cyan.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.blue.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<NutritionService>(
+      builder: (context, nutritionService, _) {
+        final snapshot = nutritionService.todaySnapshot;
+        final currentGlasses = snapshot?.waterGlasses ?? 0;
+        const targetGlasses = 8;
+        
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.blue.withOpacity(0.1),
+                Colors.cyan.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.blue.withOpacity(0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Hydration',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hydration',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '$currentGlasses / $targetGlasses glasses',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '$currentGlasses / $targetGlasses glasses',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.water_drop,
+                      color: Colors.blue,
+                      size: 24,
                     ),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.water_drop,
-                  color: Colors.blue,
-                  size: 24,
-                ),
+              const SizedBox(height: 20),
+              
+              // Water glasses visualization
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(targetGlasses, (index) {
+                  final isFilled = index < currentGlasses;
+                  return GestureDetector(
+                    onTap: () async {
+                      // Toggle glass - set water to this glass number + 1
+                      await nutritionService.logWater(index + 1);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('💧 Water updated to ${index + 1} glasses'),
+                            duration: const Duration(seconds: 1),
+                            backgroundColor: Colors.blue,
+                          ),
+                        );
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 24,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isFilled ? Colors.blue : Colors.transparent,
+                        border: Border.all(
+                          color: Colors.blue,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        // Add one glass of water
+                        final newCount = currentGlasses + 1;
+                        await nutritionService.logWater(newCount);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('💧 Added glass of water! Total: $newCount'),
+                              duration: const Duration(seconds: 2),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Glass'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          
-          // Water glasses visualization
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(targetGlasses, (index) {
-              final isFilled = index < currentGlasses;
-              return GestureDetector(
-                onTap: () {
-                  // TODO: Update hydration
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: 24,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: isFilled ? Colors.blue : Colors.transparent,
-                    border: Border.all(
-                      color: Colors.blue,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 16),
-          
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: Add glass of water
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Glass'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -805,13 +833,40 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
     );
   }
 
-  void _exportAsPDF() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('📄 Nutrition report exported!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+  void _exportAsPDF() async {
+    try {
+      final nutritionService = Provider.of<NutritionService>(context, listen: false);
+      final snapshot = nutritionService.todaySnapshot;
+      
+      if (snapshot == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ No nutrition data available to export'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      
+      // Show success message (PDF generation will be implemented later)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('📄 PDF export feature coming soon! For now, data is saved locally.'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Error exporting PDF: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Export failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _shareSummary() {
