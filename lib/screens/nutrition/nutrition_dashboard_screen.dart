@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:math' as math;
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
@@ -810,12 +811,12 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: const Text('Export as PDF'),
-              subtitle: const Text('Generate nutrition report'),
+              leading: const Icon(Icons.table_chart),
+              title: const Text('Export as CSV'),
+              subtitle: const Text('Download nutrition data'),
               onTap: () {
                 Navigator.pop(context);
-                _exportAsPDF();
+                _exportAsCSV();
               },
             ),
             ListTile(
@@ -833,7 +834,62 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
     );
   }
 
-  void _exportAsPDF() async {
+  void _exportAsCSV() async {
+    try {
+      final nutritionService = Provider.of<NutritionService>(context, listen: false);
+      
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('Generating CSV export...'),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Export CSV
+      await NutritionExportService().saveAndShareCSV(
+        nutritionService: nutritionService,
+        startDate: DateTime.now().subtract(const Duration(days: 30)),
+        endDate: DateTime.now(),
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ CSV exported successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error exporting CSV: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Export failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  void _shareSummary() async {
     try {
       final nutritionService = Provider.of<NutritionService>(context, listen: false);
       final snapshot = nutritionService.todaySnapshot;
@@ -841,41 +897,40 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
       if (snapshot == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ No nutrition data available to export'),
+            content: Text('❌ No nutrition data available to share'),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
       
-      // Show success message (PDF generation will be implemented later)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('📄 PDF export feature coming soon! For now, data is saved locally.'),
-          backgroundColor: Colors.blue,
-          duration: Duration(seconds: 3),
-        ),
+      final summary = NutritionExportService().generateShareableSummary(snapshot);
+      
+      // Share the summary text
+      await Share.share(
+        summary,
+        subject: 'My Nutrition Summary',
       );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📤 Nutrition summary shared!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      debugPrint('❌ Error exporting PDF: $e');
+      debugPrint('❌ Error sharing summary: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ Export failed: ${e.toString()}'),
+            content: Text('❌ Share failed: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
-  }
-
-  void _shareSummary() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('📤 Nutrition summary shared!'),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   Future<void> _handleRefresh() async {

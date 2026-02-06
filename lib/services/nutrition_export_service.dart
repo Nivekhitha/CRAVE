@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'nutrition_service.dart';
 import '../models/nutrition_snapshot.dart';
 
@@ -22,6 +25,86 @@ class NutritionExportService {
     );
     
     return const JsonEncoder.withIndent('  ').convert(reportData);
+  }
+
+  /// Export nutrition data as CSV file
+  Future<String> exportAsCSV({
+    required NutritionService nutritionService,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final reportData = await nutritionService.exportNutritionReport(
+      startDate: startDate,
+      endDate: endDate,
+    );
+    
+    final snapshots = reportData['snapshots'] as List<dynamic>;
+    
+    // CSV Header
+    final csvLines = <String>[];
+    csvLines.add('Date,Nutrition Score,Calories,Protein (g),Carbs (g),Fats (g),Fiber (g),Water (glasses),Insights');
+    
+    // CSV Data Rows
+    for (final snapshot in snapshots) {
+      final date = snapshot['date'] as String;
+      final score = snapshot['nutritionScore'];
+      final macros = snapshot['macros'] as Map<String, dynamic>;
+      final water = snapshot['waterGlasses'];
+      final insights = (snapshot['insights'] as List<dynamic>).join('; ');
+      
+      final row = [
+        date,
+        score.toString(),
+        macros['calories']?.toStringAsFixed(0) ?? '0',
+        macros['protein']?.toStringAsFixed(1) ?? '0',
+        macros['carbs']?.toStringAsFixed(1) ?? '0',
+        macros['fats']?.toStringAsFixed(1) ?? '0',
+        macros['fiber']?.toStringAsFixed(1) ?? '0',
+        water.toString(),
+        '"${insights.replaceAll('"', '""')}"', // Escape quotes in insights
+      ];
+      
+      csvLines.add(row.join(','));
+    }
+    
+    return csvLines.join('\n');
+  }
+
+  /// Save and share CSV file
+  Future<void> saveAndShareCSV({
+    required NutritionService nutritionService,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      // Generate CSV content
+      final csvContent = await exportAsCSV(
+        nutritionService: nutritionService,
+        startDate: startDate,
+        endDate: endDate,
+      );
+      
+      // Get temporary directory
+      final directory = await getTemporaryDirectory();
+      final fileName = 'nutrition_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+      final filePath = '${directory.path}/$fileName';
+      
+      // Write CSV to file
+      final file = File(filePath);
+      await file.writeAsString(csvContent);
+      
+      // Share the file
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        subject: 'Nutrition Data Export',
+        text: 'My nutrition data from Crave app',
+      );
+      
+      debugPrint('✅ CSV exported and shared: $filePath');
+    } catch (e) {
+      debugPrint('❌ Error exporting CSV: $e');
+      rethrow;
+    }
   }
 
   /// Generate comprehensive nutrition report for PDF export
