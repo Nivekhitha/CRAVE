@@ -87,7 +87,32 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           Text('Recipe Detail',
                               style: AppTextStyles.titleLarge
                                   .copyWith(color: AppColors.textPrimary)),
-                          _CircleButton(icon: Icons.share, onTap: () {}),
+                          Consumer<UserProvider>(
+                            builder: (context, userProvider, _) {
+                              final isSaved = userProvider.isRecipeSaved(recipe.id);
+                              return _CircleButton(
+                                icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                onTap: () async {
+                                  try {
+                                    await userProvider.toggleSaveRecipe(recipe.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(isSaved ? 'Recipe unsaved' : 'Recipe saved!'),
+                                        duration: const Duration(seconds: 1),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to save recipe'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
