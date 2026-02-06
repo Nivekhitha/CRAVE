@@ -66,6 +66,9 @@ dev_dependencies:
   hive_generator: ^2.0.1
   build_runner: ^2.4.6
   mockito: ^5.4.4
+  
+  # App Icon Generator
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -75,4 +78,23 @@ flutter:
     - assets/images/
     - assets/images/icons/
     - .env
+
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.jpeg"
+  adaptive_icon_background: "#D84315"  # Orange background
+  adaptive_icon_foreground: "assets/images/logo.jpeg"
+  web:
+    generate: true
+    image_path: "assets/images/logo.jpeg"
+    background_color: "#D84315"
+    theme_color: "#D84315"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.jpeg"
+  macos:
+    generate: true
+    image_path: "assets/images/logo.jpeg"
 
