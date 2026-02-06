@@ -856,6 +856,8 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
             ],
           ),
           duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(top: 80, left: 16, right: 16),
         ),
       );
       
@@ -872,6 +874,8 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
             content: Text('✅ CSV exported successfully!'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(top: 80, left: 16, right: 16),
           ),
         );
       }
@@ -883,6 +887,8 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
             content: Text('❌ Export failed: ${e.toString()}'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
           ),
         );
       }
@@ -899,6 +905,8 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
           const SnackBar(
             content: Text('❌ No nutrition data available to share'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(top: 80, left: 16, right: 16),
           ),
         );
         return;
@@ -917,6 +925,8 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
           const SnackBar(
             content: Text('📤 Nutrition summary shared!'),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(top: 80, left: 16, right: 16),
           ),
         );
       }
@@ -927,6 +937,8 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
           SnackBar(
             content: Text('❌ Share failed: ${e.toString()}'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
           ),
         );
       }

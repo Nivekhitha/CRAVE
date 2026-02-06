@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'nutrition_service.dart';
 import '../models/nutrition_snapshot.dart';
 
@@ -46,14 +47,25 @@ class NutritionExportService {
     
     // CSV Data Rows
     for (final snapshot in snapshots) {
-      final date = snapshot['date'] as String;
+      // Handle date - could be String or Timestamp
+      String dateStr;
+      final dateValue = snapshot['date'];
+      if (dateValue is String) {
+        dateStr = dateValue;
+      } else if (dateValue is Timestamp) {
+        final date = dateValue.toDate();
+        dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      } else {
+        dateStr = DateTime.now().toString().split(' ')[0];
+      }
+      
       final score = snapshot['nutritionScore'];
       final macros = snapshot['macros'] as Map<String, dynamic>;
       final water = snapshot['waterGlasses'];
       final insights = (snapshot['insights'] as List<dynamic>).join('; ');
       
       final row = [
-        date,
+        dateStr,
         score.toString(),
         macros['calories']?.toStringAsFixed(0) ?? '0',
         macros['protein']?.toStringAsFixed(1) ?? '0',

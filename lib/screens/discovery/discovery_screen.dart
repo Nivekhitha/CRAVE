@@ -452,7 +452,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   Widget _buildTrendingSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 100), // Added bottom padding for navigation bar
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

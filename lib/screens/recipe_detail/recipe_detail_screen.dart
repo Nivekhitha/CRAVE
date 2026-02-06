@@ -99,6 +99,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       SnackBar(
                                         content: Text(isSaved ? 'Recipe unsaved' : 'Recipe saved!'),
                                         duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
                                       ),
                                     );
                                   } catch (e) {
@@ -106,6 +108,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       const SnackBar(
                                         content: Text('Failed to save recipe'),
                                         duration: Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: EdgeInsets.only(top: 80, left: 16, right: 16),
                                       ),
                                     );
                                   }
@@ -235,7 +239,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(SnackBar(
                                               content: Text(
-                                                  '${missing.length} items added to grocery list')));
+                                                  '${missing.length} items added to grocery list'),
+                                              behavior: SnackBarBehavior.floating,
+                                              margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+                                          ));
                                     },
                                     icon: const Icon(Icons.add_shopping_cart,
                                         size: 16),
@@ -457,7 +464,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           // Track recipe completion
                           context.read<UserStatsService>().recordRecipeCooked();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Recipe completed! 🎉')),
+                            const SnackBar(
+                              content: Text('Recipe completed! 🎉'),
+                              behavior: SnackBarBehavior.floating,
+                              margin: EdgeInsets.only(top: 80, left: 16, right: 16),
+                            ),
                           );
                           Navigator.pop(context);
                         },
