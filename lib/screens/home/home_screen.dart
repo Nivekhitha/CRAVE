@@ -57,23 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return const _HomeView();
   }
 }
-              icon: Icon(LucideIcons.plusCircle, size: 32, color: AppColors.warmPeach),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.bookOpen), 
-              label: 'Journal',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.user),
-              label: 'Profile',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _HomeView extends StatelessWidget {
   const _HomeView();
