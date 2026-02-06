@@ -194,12 +194,21 @@ class _PantryScreenState extends State<PantryScreen> {
                                 await userProvider.addPantryItem(newItem);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('$item added!')));
+                                      SnackBar(
+                                        content: Text('$item added!'),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+                                      ));
                                 }
                               } catch (e) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Error adding $item: $e'), backgroundColor: Colors.red));
+                                      SnackBar(
+                                        content: Text('Error adding $item: $e'),
+                                        backgroundColor: Colors.red,
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+                                      ));
                                 }
                               }
                             },
@@ -296,9 +305,88 @@ class _PantryScreenState extends State<PantryScreen> {
                             title: Text(name,
                                 style: AppTextStyles.bodyLarge
                                     .copyWith(color: AppColors.textPrimary)),
-                            subtitle: item['quantity'] != null
-                                ? Text(item['quantity'])
-                                : null,
+                            subtitle: Text(
+                              item['category'] ?? 'Other',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Quantity controls
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: AppColors.primary.withValues(alpha: 0.2),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Decrease button
+                                      IconButton(
+                                        icon: const Icon(Icons.remove, size: 18),
+                                        onPressed: () => _updateQuantity(
+                                          context,
+                                          userProvider,
+                                          id,
+                                          item,
+                                          -1,
+                                        ),
+                                        padding: const EdgeInsets.all(4),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 32,
+                                          minHeight: 32,
+                                        ),
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      // Quantity display
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        child: Text(
+                                          item['quantity']?.toString() ?? '1',
+                                          style: AppTextStyles.labelMedium.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      // Increase button
+                                      IconButton(
+                                        icon: const Icon(Icons.add, size: 18),
+                                        onPressed: () => _updateQuantity(
+                                          context,
+                                          userProvider,
+                                          id,
+                                          item,
+                                          1,
+                                        ),
+                                        padding: const EdgeInsets.all(4),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 32,
+                                          minHeight: 32,
+                                        ),
+                                        color: AppColors.primary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Delete button
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () => _deleteIngredient(
+                                    context,
+                                    userProvider,
+                                    id,
+                                    name,
+                                  ),
+                                  color: Colors.red.shade400,
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -353,12 +441,21 @@ class _PantryScreenState extends State<PantryScreen> {
       setState(() {});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${newIngredient['name']} added!')));
+            SnackBar(
+              content: Text('${newIngredient['name']} added!'),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+            ));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding item: $e'), backgroundColor: Colors.red));
+            SnackBar(
+              content: Text('Error adding item: $e'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+            ));
       }
     }
   }
@@ -396,5 +493,90 @@ class _PantryScreenState extends State<PantryScreen> {
     if (['onion', 'tomato', 'potato', 'carrot', 'spinach', 'lettuce', 'garlic']
         .contains(lower)) return 'Vegetables';
     return 'Other';
+  }
+
+  Future<void> _updateQuantity(
+    BuildContext context,
+    UserProvider provider,
+    String id,
+    Map<String, dynamic> item,
+    int change,
+  ) async {
+    try {
+      final currentQty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+      final newQty = (currentQty + change).clamp(1, 99);
+      
+      if (newQty != currentQty) {
+        // Update in Firestore via provider
+        await provider.addPantryItem({
+          ...item,
+          'quantity': newQty.toString(),
+        });
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating quantity: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteIngredient(
+    BuildContext context,
+    UserProvider provider,
+    String id,
+    String name,
+  ) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Ingredient'),
+        content: Text('Remove $name from your fridge?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await provider.deletePantryItem(id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$name removed'),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error removing $name: $e'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+            ),
+          );
+        }
+      }
+    }
   }
 }
