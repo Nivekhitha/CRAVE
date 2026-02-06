@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
+import '../../models/recipe.dart';
 import '../../widgets/suggestions/recipe_suggestions_widget.dart';
 import '../../widgets/discovery/search_bar_widget.dart';
 import '../../widgets/discovery/filter_chip_list.dart';
+import '../recipe_detail/recipe_detail_screen.dart';
 
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({super.key});
@@ -208,7 +210,26 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                     const Spacer(),
                     ElevatedButton(
                       onPressed: () {
-                        // TODO: Navigate to recipe detail
+                        // Navigate to featured recipe detail
+                        final featuredRecipe = Recipe(
+                          id: 'featured_mediterranean_quinoa',
+                          title: 'Mediterranean Quinoa Bowl',
+                          description: 'A nutritious and colorful bowl packed with fresh vegetables, quinoa, and a tangy lemon dressing.',
+                          ingredients: ['Quinoa', 'Cherry Tomatoes', 'Cucumber', 'Red Onion', 'Feta Cheese', 'Olives', 'Lemon', 'Olive Oil', 'Fresh Herbs'],
+                          instructions: 'Cook quinoa according to package directions.\nChop all vegetables into bite-sized pieces.\nCombine quinoa and vegetables in a large bowl.\nWhisk together lemon juice, olive oil, salt, and pepper for dressing.\nToss everything together and top with feta cheese and fresh herbs.\nServe chilled or at room temperature.',
+                          cookTime: 25,
+                          difficulty: 'Easy',
+                          source: 'manual',
+                          tags: ['Healthy', 'Vegetarian', 'Quick & Easy'],
+                          imageUrl: 'https://source.unsplash.com/800x600/?mediterranean,quinoa,bowl',
+                          createdAt: DateTime.now(),
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RecipeDetailScreen(recipe: featuredRecipe),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -297,66 +318,69 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
         final index = entry.key;
         final recipe = entry.value;
         
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: recipe.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+        return GestureDetector(
+          onTap: () => _navigateToTrendingRecipe(recipe.title),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
                 ),
-                child: Center(
-                  child: Text(
-                    '${index + 1}',
-                    style: AppTextStyles.titleSmall.copyWith(
-                      color: recipe.color,
-                      fontWeight: FontWeight.bold,
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: recipe.color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: recipe.color,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      recipe.title,
-                      style: AppTextStyles.titleSmall.copyWith(
-                        fontWeight: FontWeight.w600,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        recipe.title,
+                        style: AppTextStyles.titleSmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      recipe.views,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
+                      const SizedBox(height: 4),
+                      Text(
+                        recipe.views,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                recipe.icon,
-                color: recipe.color,
-                size: 20,
-              ),
-            ],
+                Icon(
+                  recipe.icon,
+                  color: recipe.color,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),
@@ -378,6 +402,93 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       _selectedFilter = filter;
     });
     // TODO: Filter recipes based on selection
+  }
+
+  void _navigateToTrendingRecipe(String title) {
+    // Create mock recipe based on trending title
+    Recipe trendingRecipe;
+    
+    switch (title) {
+      case 'Avocado Toast Variations':
+        trendingRecipe = Recipe(
+          id: 'trending_avocado_toast',
+          title: title,
+          description: 'Elevate your breakfast with these creative avocado toast variations. From classic to gourmet!',
+          ingredients: ['Bread', 'Avocado', 'Lemon', 'Salt', 'Pepper', 'Cherry Tomatoes', 'Feta Cheese', 'Red Pepper Flakes'],
+          instructions: 'Toast bread until golden brown.\nMash avocado with lemon juice, salt, and pepper.\nSpread avocado mixture on toast.\nTop with cherry tomatoes, feta cheese, and red pepper flakes.\nServe immediately.',
+          cookTime: 10,
+          difficulty: 'Easy',
+          source: 'manual',
+          tags: ['Quick & Easy', 'Healthy', 'Vegetarian'],
+          imageUrl: 'https://source.unsplash.com/800x600/?avocado,toast',
+          createdAt: DateTime.now(),
+        );
+        break;
+      case 'One-Pot Pasta Recipes':
+        trendingRecipe = Recipe(
+          id: 'trending_one_pot_pasta',
+          title: title,
+          description: 'Easy one-pot pasta that cooks everything together for minimal cleanup and maximum flavor.',
+          ingredients: ['Pasta', 'Garlic', 'Cherry Tomatoes', 'Spinach', 'Olive Oil', 'Parmesan', 'Basil', 'Vegetable Broth'],
+          instructions: 'Add pasta, garlic, tomatoes, and broth to a large pot.\nBring to a boil, then reduce heat and simmer.\nStir occasionally until pasta is cooked and liquid is absorbed.\nAdd spinach and stir until wilted.\nTop with parmesan and fresh basil.',
+          cookTime: 20,
+          difficulty: 'Easy',
+          source: 'manual',
+          tags: ['Quick & Easy', 'One Pot', 'Vegetarian'],
+          imageUrl: 'https://source.unsplash.com/800x600/?pasta,pot',
+          createdAt: DateTime.now(),
+        );
+        break;
+      case 'Healthy Smoothie Bowls':
+        trendingRecipe = Recipe(
+          id: 'trending_smoothie_bowl',
+          title: title,
+          description: 'Thick, creamy smoothie bowls topped with fresh fruits, nuts, and seeds for a nutritious breakfast.',
+          ingredients: ['Frozen Berries', 'Banana', 'Greek Yogurt', 'Almond Milk', 'Granola', 'Fresh Fruits', 'Chia Seeds', 'Honey'],
+          instructions: 'Blend frozen berries, banana, yogurt, and almond milk until thick.\nPour into a bowl.\nTop with granola, fresh fruits, chia seeds, and a drizzle of honey.\nServe immediately.',
+          cookTime: 5,
+          difficulty: 'Easy',
+          source: 'manual',
+          tags: ['Quick & Easy', 'Healthy', 'Vegetarian'],
+          imageUrl: 'https://source.unsplash.com/800x600/?smoothie,bowl',
+          createdAt: DateTime.now(),
+        );
+        break;
+      case 'Air Fryer Vegetables':
+        trendingRecipe = Recipe(
+          id: 'trending_air_fryer_veg',
+          title: title,
+          description: 'Crispy, perfectly roasted vegetables made easy in the air fryer with minimal oil.',
+          ingredients: ['Broccoli', 'Carrots', 'Bell Peppers', 'Zucchini', 'Olive Oil', 'Garlic Powder', 'Salt', 'Pepper'],
+          instructions: 'Cut vegetables into uniform pieces.\nToss with olive oil, garlic powder, salt, and pepper.\nPlace in air fryer basket in a single layer.\nAir fry at 400°F for 12-15 minutes, shaking halfway through.\nServe hot.',
+          cookTime: 15,
+          difficulty: 'Easy',
+          source: 'manual',
+          tags: ['Quick & Easy', 'Healthy', 'Vegetarian'],
+          imageUrl: 'https://source.unsplash.com/800x600/?vegetables,roasted',
+          createdAt: DateTime.now(),
+        );
+        break;
+      default:
+        trendingRecipe = Recipe(
+          id: 'trending_default',
+          title: title,
+          description: 'A popular recipe trending this week!',
+          ingredients: ['Ingredient 1', 'Ingredient 2', 'Ingredient 3'],
+          instructions: 'Follow the steps to create this amazing dish.',
+          cookTime: 30,
+          difficulty: 'Medium',
+          source: 'manual',
+          createdAt: DateTime.now(),
+        );
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RecipeDetailScreen(recipe: trendingRecipe),
+      ),
+    );
   }
 
   Future<void> _handleRefresh() async {
