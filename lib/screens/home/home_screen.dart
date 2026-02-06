@@ -41,8 +41,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
   @override
   void initState() {
     super.initState();
@@ -53,71 +51,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  final List<Widget> _screens = [
-    const _HomeView(),
-    const DiscoveryScreen(), 
-    const SizedBox(), 
-    const JournalScreen(), 
-    const ProfileScreen(),
-  ];
-
-  void _onTabTapped(int index) {
-    if (index == 2) {
-      _showAddBottomSheet();
-      return;
-    }
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  void _showAddBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => const QuickActionBottomSheet(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.creamWhite,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          backgroundColor: AppColors.surface,
-          selectedItemColor: AppColors.freshMint,
-          unselectedItemColor: AppColors.slate,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.compass), 
-              label: 'Discover',
-            ),
-            BottomNavigationBarItem(
+    // HomeScreen is just the home view - navigation handled by MainNavigationScreen
+    return const _HomeView();
+  }
+}
               icon: Icon(LucideIcons.plusCircle, size: 32, color: AppColors.warmPeach),
               label: '',
             ),
