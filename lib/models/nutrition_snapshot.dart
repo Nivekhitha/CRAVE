@@ -1,41 +1,16 @@
-import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-part 'nutrition_snapshot.g.dart';
-
-@HiveType(typeId: 3)
-class NutritionSnapshot extends HiveObject {
-  @HiveField(0)
+class NutritionSnapshot {
   late DateTime date;
-
-  @HiveField(1)
   late Map<String, double> macros; // calories, protein, carbs, fats, fiber
-
-  @HiveField(2)
   late Map<String, double> vitamins; // A, C, D, E, K, B-complex
-
-  @HiveField(3)
   late Map<String, double> minerals; // Iron, Calcium, Zinc, etc.
-
-  @HiveField(4)
   late Map<String, double> goals; // personalized daily targets
-
-  @HiveField(5)
   late Map<String, double> progress; // percentage of goals achieved
-
-  @HiveField(6)
   late int nutritionScore; // 0-100 overall score
-
-  @HiveField(7)
   late List<String> insights; // AI-generated recommendations
-
-  @HiveField(8)
   late int waterGlasses; // hydration tracking
-
-  @HiveField(9)
   late double averageGlycemicIndex; // blood sugar impact
-
-  @HiveField(10)
   DateTime? lastUpdated;
 
   NutritionSnapshot({

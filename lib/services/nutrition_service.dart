@@ -9,14 +9,14 @@ import '../models/recipe.dart';
 
 class NutritionService extends ChangeNotifier {
   static const String _boxName = 'nutrition_v2';
-  static const String _snapshotBoxName = 'nutrition_snapshots_v1';
   final AuthService _auth = AuthService();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final JournalService _journalService;
   final MealPlanService _mealPlanService;
   
   Box? _box;
-  Box<NutritionSnapshot>? _snapshotBox;
+  // In-memory cache for snapshots (no Hive for NutritionSnapshot)
+  final Map<String, NutritionSnapshot> _snapshotCache = {};
   bool _isInitialized = false;
 
   // Enhanced daily nutrition goals with micronutrients
@@ -69,7 +69,6 @@ class NutritionService extends ChangeNotifier {
     
     try {
       _box = await Hive.openBox(_boxName);
-      _snapshotBox = await Hive.openBox<NutritionSnapshot>(_snapshotBoxName);
       _isInitialized = true;
       
       await _loadUserGoals();
@@ -98,8 +97,8 @@ class NutritionService extends ChangeNotifier {
   Future<void> _loadTodaySnapshot() async {
     final today = _dateKey(DateTime.now());
     
-    // Try to load from Hive cache first
-    _todaySnapshot = _snapshotBox?.get(today);
+    // Try to load from in-memory cache first
+    _todaySnapshot = _snapshotCache[today];
     
     if (_todaySnapshot == null) {
       // Generate new snapshot for today
@@ -117,14 +116,14 @@ class NutritionService extends ChangeNotifier {
       final dateKey = _dateKey(date);
       
       // Try to load from cache
-      final snapshot = _snapshotBox?.get(dateKey);
+      final snapshot = _snapshotCache[dateKey];
       if (snapshot != null) {
         _weeklySnapshots[dateKey] = snapshot;
       } else {
         // Generate snapshot for this date
         final newSnapshot = await _generateSnapshotForDate(date);
         _weeklySnapshots[dateKey] = newSnapshot;
-        await _snapshotBox?.put(dateKey, newSnapshot);
+        _snapshotCache[dateKey] = newSnapshot;
       }
     }
     
@@ -242,7 +241,7 @@ class NutritionService extends ChangeNotifier {
     
     // Cache the snapshot
     final dateKey = _dateKey(today);
-    await _snapshotBox?.put(dateKey, _todaySnapshot!);
+    _snapshotCache[dateKey] = _todaySnapshot!;
     
     // Sync to Firestore
     await _syncSnapshotToFirestore(_todaySnapshot!);
@@ -377,7 +376,7 @@ class NutritionService extends ChangeNotifier {
       );
       
       // Cache updated snapshot
-      await _snapshotBox?.put(today, _todaySnapshot!);
+      _snapshotCache[today] = _todaySnapshot!;
       await _syncSnapshotToFirestore(_todaySnapshot!);
     }
     
@@ -534,7 +533,7 @@ class NutritionService extends ChangeNotifier {
     for (var date = startDate; date.isBefore(endDate.add(const Duration(days: 1))); 
          date = date.add(const Duration(days: 1))) {
       final dateKey = _dateKey(date);
-      final snapshot = _snapshotBox?.get(dateKey);
+      final snapshot = _snapshotCache[dateKey];
       if (snapshot != null) {
         snapshots.add(snapshot);
       }
