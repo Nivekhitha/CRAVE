@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
+import '../../services/user_stats_service.dart';
 import '../../models/recipe.dart';
+import '../cooking/cooking_session_screen.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -85,7 +87,36 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           Text('Recipe Detail',
                               style: AppTextStyles.titleLarge
                                   .copyWith(color: AppColors.textPrimary)),
-                          _CircleButton(icon: Icons.share, onTap: () {}),
+                          Consumer<UserProvider>(
+                            builder: (context, userProvider, _) {
+                              final isSaved = userProvider.isRecipeSaved(recipe.id);
+                              return _CircleButton(
+                                icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                onTap: () async {
+                                  try {
+                                    await userProvider.toggleSaveRecipe(recipe.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(isSaved ? 'Recipe unsaved' : 'Recipe saved!'),
+                                        duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to save recipe'),
+                                        duration: Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: EdgeInsets.only(top: 80, left: 16, right: 16),
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -208,7 +239,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(SnackBar(
                                               content: Text(
-                                                  '${missing.length} items added to grocery list')));
+                                                  '${missing.length} items added to grocery list'),
+                                              behavior: SnackBarBehavior.floating,
+                                              margin: const EdgeInsets.only(top: 80, left: 16, right: 16),
+                                          ));
                                     },
                                     icon: const Icon(Icons.add_shopping_cart,
                                         size: 16),
@@ -387,34 +421,76 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
               ),
 
-              // Floating Action Button
+              // Floating Action Buttons
               Positioned(
                 bottom: 24,
                 left: 24,
                 right: 24,
-                child: ElevatedButton(
-                  onPressed: () {
-                    userProvider.completeCooking();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Recipe completed! 🎉')),
-                    );
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    elevation: 8,
-                  ),
-                  child: Text(
-                    'Cook Today',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.bold,
+                child: Row(
+                  children: [
+                    // Start Cooking Button
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CookingSessionScreen(recipe: recipe),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.play_arrow, size: 24),
+                        label: const Text('Start Cooking'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 8,
+                        ),
+                      ),
                     ),
-                  ),
+                    
+                    const SizedBox(width: 12),
+                    
+                    // Cook Today Button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          userProvider.completeCooking();
+                          // Track recipe completion
+                          context.read<UserStatsService>().recordRecipeCooked();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Recipe completed! 🎉'),
+                              behavior: SnackBarBehavior.floating,
+                              margin: EdgeInsets.only(top: 80, left: 16, right: 16),
+                            ),
+                          );
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 8,
+                        ),
+                        child: Text(
+                          'Save',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: AppColors.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

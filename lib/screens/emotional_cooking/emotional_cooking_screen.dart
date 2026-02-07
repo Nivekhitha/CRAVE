@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../widgets/premium/premium_gate.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 import '../../providers/user_provider.dart';
 import '../../services/recipe_ai_service.dart';
@@ -100,8 +101,10 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return PremiumGate(
+      featureId: 'emotional_cooking',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -364,6 +367,7 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
             ),
           );
         },
+      ),
       ),
     );
   }

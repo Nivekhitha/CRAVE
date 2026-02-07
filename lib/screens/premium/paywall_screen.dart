@@ -537,7 +537,7 @@ class _PaywallScreenState extends State<PaywallScreen>
               onPressed: () async {
                 try {
                   await context.read<PremiumService>().restorePurchases();
-                  if (mounted && context.read<PremiumService>().isPremium) {
+                  if (mounted && context.read<PremiumService>().isPremium.value) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Purchases Restored! ✨')),
                     );

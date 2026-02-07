@@ -16,7 +16,7 @@ void main() {
         await dotenv.load(fileName: ".env");
       } catch (e) {
         // Fallback for CI/Test environment if .env not found in asset bundle
-        dotenv.testLoad(fileInput: 'GEMINI_API_KEY=AIzaSyBV75dN8Pi7obUpSSE8UZMZMvO7u_x8dXA'); 
+        dotenv.env['GEMINI_API_KEY'] = 'AIzaSyBV75dN8Pi7obUpSSE8UZMZMvO7u_x8dXA';
         print("⚠️ Loaded mock/fallback API key for testing");
       }
       

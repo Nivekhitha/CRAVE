@@ -3,138 +3,316 @@ import 'package:flutter/foundation.dart';
 import 'package:read_pdf_text/read_pdf_text.dart';
 import '../models/recipe.dart';
 import '../models/ingredient.dart';
+import '../models/extraction_result.dart';
+import '../utils/content_hasher.dart';
+import 'extraction_cache_service.dart';
+import 'extraction_retry_service.dart';
+import 'recipe_ai_service.dart';
 
-/// Client-Side Service for "Demo" Recipe Extraction.
-/// Bypasses the need for a live backend or Cloud Functions billing.
+/// Robust Recipe Extraction Service with Multi-Layer Caching and Retry Logic
+/// Cache hierarchy: Hive (local) -> Firestore (cloud) -> Fresh AI extraction
 class RecipeExtractionService {
   // Singleton pattern
   static final RecipeExtractionService _instance = RecipeExtractionService._internal();
   factory RecipeExtractionService() => _instance;
   RecipeExtractionService._internal();
 
-  /// Extract recipe from URL or PDF (Simulated locally)
-  /// [pdfPath] is the absolute path to the local PDF file
-  Future<Recipe?> extractRecipe({String? url, String? pdfPath}) async {
+  final ExtractionCacheService _cacheService = ExtractionCacheService();
+  final RecipeAiService _aiService = RecipeAiService();
+  bool _isInitialized = false;
+
+  /// Initialize the extraction service
+  Future<void> initialize() async {
+    if (_isInitialized) return;
     
-    // PDF Extraction
-    if (pdfPath != null) {
-      try {
-        debugPrint("📄 Parsing PDF: $pdfPath");
-        String text = await ReadPdfText.getPDFtext(pdfPath);
-        
-        if (text.trim().isEmpty) {
-          debugPrint("⚠️ PDF text was empty. It might be an image-only PDF.");
-          return null;
-        }
-
-        return _parseRecipeFromText(text, pdfPath);
-      } catch (e) {
-        debugPrint("❌ Error reading PDF: $e");
-        return null;
-      }
+    try {
+      await _cacheService.initialize();
+      _isInitialized = true;
+      debugPrint("✅ Recipe extraction service initialized");
+    } catch (e) {
+      debugPrint("⚠️ Failed to initialize extraction service: $e");
     }
-
-    // 1. Simulate Network Delay for realism (URL flow simulation)
-    await Future.delayed(const Duration(seconds: 2));
-
-    final inputString = (url ?? '').toLowerCase();
-    
-    // 2. Deterministic Logic: Return specific recipes based on keywords for DEMO URLS
-    if (inputString.contains('pasta') || inputString.contains('spaghetti') || inputString.contains('italian')) {
-      return _getRecipeData(_pastaRecipe, url);
-    }
-    
-    if (inputString.contains('chicken') || inputString.contains('curry') || inputString.contains('roast')) {
-      return _getRecipeData(_chickenRecipe, url);
-    }
-
-    if (inputString.contains('salad') || inputString.contains('healthy') || inputString.contains('vegan')) {
-      return _getRecipeData(_saladRecipe, url);
-    }
-
-    if (inputString.contains('cake') || inputString.contains('dessert') || inputString.contains('sweet')) {
-      return _getRecipeData(_cakeRecipe, url);
-    }
-
-    // Default Fallback
-    return _getRecipeData(_defaultRecipe, url);
   }
 
-  Recipe _parseRecipeFromText(String text, String sourcePath) {
-    debugPrint("🧠 Heuristic Analysis of PDF Text...");
+  /// Extract recipe with robust caching and retry logic
+  /// [pdfPath] is the absolute path to the local PDF file
+  /// [onProgress] callback for UI updates
+  Future<ExtractionResult> extractRecipe({
+    String? url, 
+    String? pdfPath,
+    Function(String)? onProgress,
+  }) async {
+    await initialize();
     
-    // Heuristic 1: Title
-    // Assume the first non-empty line effectively, or check for specific formatting eventually
-    // For now, we take the first line that looks like a title (not a page number)
-    List<String> lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
-    
-    String title = "Extracted Recipe";
-    if (lines.isNotEmpty) {
-      // Simple heuristic: First realistic line is the title
-      title = lines.firstWhere((l) => l.length > 3 && !l.contains('Page'), orElse: () => "Unknown Recipe");
-    }
-
-    // Heuristic 2: Sections
-    List<String> ingredientsRaw = [];
-    List<String> instructionsRaw = [];
-    
-    String? currentSection; // 'ingredients' or 'instructions'
-
-    for (var line in lines) {
-      String lower = line.toLowerCase();
+    try {
+      // Generate content hash for caching
+      String contentHash;
+      String sourceInfo;
       
-      // Section Headers
-      if (lower.contains('ingredients') || lower.contains('what you need') || lower.contains('shopping list')) {
-        currentSection = 'ingredients';
-        continue;
+      if (pdfPath != null) {
+        onProgress?.call('Analyzing PDF file...');
+        final file = File(pdfPath);
+        contentHash = await ContentHasher.hashFile(file);
+        sourceInfo = 'PDF: ${file.path.split('/').last}';
+      } else if (url != null) {
+        onProgress?.call('Processing URL...');
+        contentHash = ContentHasher.hashUrl(url);
+        sourceInfo = 'URL: $url';
+      } else {
+        throw Exception('Either PDF path or URL must be provided');
       }
+
+      debugPrint("🔐 Content hash: $contentHash");
+
+      // 1. Check cache first
+      onProgress?.call('Checking cache...');
+      final cachedResult = await _cacheService.getCached(contentHash);
+      if (cachedResult != null) {
+        onProgress?.call('Found in cache! Loading recipes...');
+        return cachedResult;
+      }
+
+      // 2. Fresh extraction with retry logic
+      if (pdfPath != null) {
+        return await _extractFromPdf(pdfPath, contentHash, sourceInfo, onProgress);
+      } else {
+        return await _extractFromUrl(url!, contentHash, sourceInfo, onProgress);
+      }
+
+    } catch (e) {
+      debugPrint("❌ Extraction failed: $e");
       
-      if (lower.contains('instructions') || lower.contains('method') || lower.contains('preparation') || lower.contains('directions') || lower.contains('how to make')) {
-        currentSection = 'instructions';
-        continue;
-      }
-
-      // Add Content to Sections
-      if (currentSection == 'ingredients') {
-        // Filter out junk
-        if (line.length < 3) continue;
-        ingredientsRaw.add(line);
-      } else if (currentSection == 'instructions') {
-        // Filter out junk
-        if (line.length < 5) continue;
-        instructionsRaw.add(line);
-      }
-    }
-
-    // Convert to Models
-    List<Ingredient> ingredients = ingredientsRaw.map((raw) {
-      return Ingredient(
-        id: DateTime.now().millisecondsSinceEpoch.toString() + raw.hashCode.toString(),
-        name: raw, // For now, we dump the whole line as name. Smart parsing of "200g cups" is complex without NLP.
-        quantity: '1', 
-        unit: '', 
-        category: 'Pantry', // Default
+      // Return user-friendly error wrapped in result
+      return ExtractionResult.fresh(
+        recipes: [],
+        totalChunksProcessed: 0,
+        sourceInfo: pdfPath ?? url,
+        warnings: [ExtractionRetryService.getFriendlyErrorMessage(e, 1)],
       );
-    }).toList();
+    }
+  }
 
-    String instructions = instructionsRaw.join('\n\n');
-
-    return Recipe(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: title,
-      description: "Extracted from your cookbook on ${DateTime.now().toString().split(' ')[0]}",
-      source: 'cookbook',
-      sourceUrl: sourcePath, // Using local path as "URL"
-      ingredients: ingredients.map((i) => i.name).toList(), // Saving logical string list
-      instructions: instructions,
-      isPremium: true,
-      imageUrl: 'assets/images/placeholder_food.png',
-      cookCount: 0,
-      tags: ['Cookbook', 'Extracted'],
-      prepTime: 15, // Default
-      cookTime: 20, // Default
-      difficulty: 'Medium', // Default
+  /// Extract from PDF with robust processing
+  Future<ExtractionResult> _extractFromPdf(
+    String pdfPath, 
+    String contentHash, 
+    String sourceInfo,
+    Function(String)? onProgress,
+  ) async {
+    final retryConfig = ExtractionRetryService.getRetryConfig('pdf');
+    
+    return await ExtractionRetryService.withRetry<ExtractionResult>(
+      () async => _tryExtractFromPdf(pdfPath, contentHash, sourceInfo, onProgress),
+      maxRetries: retryConfig['maxRetries'],
+      baseDelay: retryConfig['baseDelay'],
+      shouldRetry: ExtractionRetryService.isRetryableError,
+      onRetry: (attempt, error, nextDelay) {
+        onProgress?.call('Retrying extraction (attempt $attempt)...');
+        debugPrint("🔄 PDF extraction retry $attempt: $error");
+      },
     );
+  }
+
+  /// Try PDF extraction (single attempt)
+  Future<ExtractionResult> _tryExtractFromPdf(
+    String pdfPath,
+    String contentHash,
+    String sourceInfo,
+    Function(String)? onProgress,
+  ) async {
+    onProgress?.call('Reading PDF content...');
+    
+    // Extract text from PDF
+    final text = await ReadPdfText.getPDFtext(pdfPath).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw Exception('PDF reading timed out. File might be too large or corrupted.'),
+    );
+    
+    if (text.trim().isEmpty) {
+      throw Exception('No text found in PDF. It might be an image scan.');
+    }
+    
+    if (text.length < 50) {
+      throw Exception('PDF text is too short. Make sure the PDF contains recipe content.');
+    }
+    
+    debugPrint("📄 Extracted ${text.length} characters from PDF");
+
+    // Process with AI
+    return await _processTextWithAI(text, contentHash, sourceInfo, onProgress);
+  }
+
+  /// Extract from URL (fallback to mock for demo)
+  Future<ExtractionResult> _extractFromUrl(
+    String url,
+    String contentHash,
+    String sourceInfo,
+    Function(String)? onProgress,
+  ) async {
+    onProgress?.call('Processing URL...');
+    
+    // For demo purposes, use the existing mock logic
+    await Future.delayed(const Duration(seconds: 2));
+    
+    final inputString = url.toLowerCase();
+    Recipe? mockRecipe;
+    
+    if (inputString.contains('pasta') || inputString.contains('spaghetti') || inputString.contains('italian')) {
+      mockRecipe = _getRecipeData(_pastaRecipe, url);
+    } else if (inputString.contains('chicken') || inputString.contains('curry') || inputString.contains('roast')) {
+      mockRecipe = _getRecipeData(_chickenRecipe, url);
+    } else if (inputString.contains('salad') || inputString.contains('healthy') || inputString.contains('vegan')) {
+      mockRecipe = _getRecipeData(_saladRecipe, url);
+    } else if (inputString.contains('cake') || inputString.contains('dessert') || inputString.contains('sweet')) {
+      mockRecipe = _getRecipeData(_cakeRecipe, url);
+    } else {
+      mockRecipe = _getRecipeData(_defaultRecipe, url);
+    }
+
+    final result = ExtractionResult.fresh(
+      recipes: [mockRecipe],
+      totalChunksProcessed: 1,
+      sourceInfo: sourceInfo,
+    );
+
+    // Cache the result
+    await _cacheService.saveToCache(contentHash, result, sourceInfo: sourceInfo);
+    
+    return result;
+  }
+
+  /// Process text with AI extraction and chunking
+  Future<ExtractionResult> _processTextWithAI(
+    String text,
+    String contentHash,
+    String sourceInfo,
+    Function(String)? onProgress,
+  ) async {
+    // Split into chunks with overlap for better recipe capture
+    final chunks = _splitTextIntoChunks(text, 2000, overlap: 500);
+    onProgress?.call('Processing ${chunks.length} sections...');
+    
+    List<Recipe> allRecipes = [];
+    List<String> warnings = [];
+    int successfulChunks = 0;
+
+    for (int i = 0; i < chunks.length; i++) {
+      final chunk = chunks[i];
+      onProgress?.call('Analyzing section ${i + 1} of ${chunks.length}...');
+      
+      try {
+        final recipes = await _aiService.analyzeText(chunk).timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {
+            warnings.add('Section ${i + 1} timed out - skipped');
+            return <Recipe>[];
+          },
+        );
+        
+        allRecipes.addAll(recipes);
+        successfulChunks++;
+        
+        if (recipes.isNotEmpty) {
+          onProgress?.call('Found ${recipes.length} recipe${recipes.length == 1 ? '' : 's'} in section ${i + 1}');
+        }
+        
+      } catch (e) {
+        debugPrint("⚠️ Failed to process chunk ${i + 1}: $e");
+        warnings.add('Section ${i + 1} failed: ${e.toString()}');
+      }
+    }
+
+    // Deduplicate recipes
+    final uniqueRecipes = _deduplicateRecipes(allRecipes);
+    
+    if (uniqueRecipes.isEmpty && warnings.isEmpty) {
+      throw Exception('No recipes found in the document. The content might not contain recipe information.');
+    }
+
+    final result = uniqueRecipes.isNotEmpty
+        ? ExtractionResult.fresh(
+            recipes: uniqueRecipes,
+            totalChunksProcessed: chunks.length,
+            sourceInfo: sourceInfo,
+            warnings: warnings,
+          )
+        : ExtractionResult.partialSuccess(
+            recipes: [],
+            totalChunksProcessed: chunks.length,
+            sourceInfo: sourceInfo,
+            warnings: warnings.isEmpty 
+                ? ['No recipes could be extracted from the document']
+                : warnings,
+          );
+
+    // Cache successful results
+    if (uniqueRecipes.isNotEmpty) {
+      await _cacheService.saveToCache(contentHash, result, sourceInfo: sourceInfo);
+    }
+
+    return result;
+  }
+
+  /// Split text into overlapped chunks
+  List<String> _splitTextIntoChunks(String text, int chunkSize, {int overlap = 0}) {
+    List<String> chunks = [];
+    int start = 0;
+    
+    while (start < text.length) {
+      int end = start + chunkSize;
+      if (end >= text.length) {
+        chunks.add(text.substring(start));
+        break;
+      }
+      
+      // Try to break at a newline to avoid cutting sentences/recipes
+      int lastNewline = text.lastIndexOf('\n', end);
+      if (lastNewline != -1 && lastNewline > start + overlap) {
+        end = lastNewline;
+      }
+      
+      chunks.add(text.substring(start, end));
+      
+      // Move start forward, but minus overlap to capture context
+      start = end - overlap;
+      
+      // Safety check: ensure we advance
+      if (start >= end) start = end;
+    }
+    
+    return chunks;
+  }
+  
+  /// Deduplicate recipes based on title similarity
+  List<Recipe> _deduplicateRecipes(List<Recipe> recipes) {
+    final Map<String, Recipe> unique = {};
+    
+    for (var recipe in recipes) {
+      final key = recipe.title.trim().toLowerCase();
+      
+      if (!unique.containsKey(key)) {
+        unique[key] = recipe;
+      } else {
+        // Keep the one with more detailed instructions
+        if ((recipe.instructions?.length ?? 0) > (unique[key]?.instructions?.length ?? 0)) {
+          unique[key] = recipe;
+        }
+      }
+    }
+    
+    return unique.values.toList();
+  }
+
+  /// Get cache statistics for debugging
+  Future<Map<String, dynamic>> getCacheStats() async {
+    await initialize();
+    return await _cacheService.getCacheStats();
+  }
+
+  /// Clear all caches (for testing/debugging)
+  Future<void> clearCaches() async {
+    await initialize();
+    await _cacheService.clearAllCaches();
   }
 
   /// Helper to convert Map data to Recipe model (Legacy Mock)

@@ -86,7 +86,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen>
     final currentRecipeCount = 5; // TODO: Get actual count from userProvider
 
     if (currentRecipeCount >= premiumService.maxRecipes &&
-        !premiumService.isPremium) {
+        !premiumService.isPremium.value) {
       // Show paywall
       final result = await Navigator.push<bool>(
         context,

@@ -28,6 +28,8 @@ class UserProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _pantryList = [];
   List<Recipe> _allRecipes = [];
   List<RecipeMatch> _recipeMatches = [];
+  List<String> _savedRecipeIds = []; // Track saved recipe IDs
+  bool _suggestionsLoading = false;
 
   // Stream Subscriptions
   StreamSubscription? _authSubscription;
@@ -46,6 +48,9 @@ class UserProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get groceryList => _groceryList;
   List<Map<String, dynamic>> get pantryList => _pantryList;
   List<RecipeMatch> get recipeMatches => _recipeMatches;
+  List<String> get savedRecipeIds => _savedRecipeIds;
+  List<Recipe> get savedRecipes => _allRecipes.where((r) => _savedRecipeIds.contains(r.id)).toList();
+  bool get suggestionsLoading => _suggestionsLoading;
 
   UserProvider() {
     _init();
@@ -76,6 +81,7 @@ class UserProvider extends ChangeNotifier {
         final data = doc.data() as Map<String, dynamic>;
         _username = data['username'];
         _country = data['country'];
+        _savedRecipeIds = List<String>.from(data['savedRecipes'] ?? []);
         notifyListeners();
       }
     } catch (e) {
@@ -141,6 +147,7 @@ class UserProvider extends ChangeNotifier {
     _groceryList = [];
     _allRecipes = [];
     _recipeMatches = [];
+    _savedRecipeIds = [];
     _cookingStreak = 0;
     _recipesCooked = 0;
     _moneySaved = 0.0;
@@ -292,6 +299,110 @@ class UserProvider extends ChangeNotifier {
     _cookingStreak++;
     // In a real app, verify against last cooked date to only increment streak once per day
     notifyListeners();
+  }
+
+  // Recipe suggestion methods
+  List<Recipe> getSuggestionsForMeal(String mealType) {
+    // Return filtered recipes based on meal type
+    return _allRecipes.where((recipe) {
+      if (recipe.tags == null) return false;
+      return recipe.tags!.any((tag) => tag.toLowerCase().contains(mealType.toLowerCase()));
+    }).take(5).toList();
+  }
+
+  List<Recipe> getOneIngredientAway() {
+    // Return recipes that need just one more ingredient
+    return _recipeMatches
+        .where((match) => match.matchPercentage >= 80)
+        .map((match) => match.recipe)
+        .take(3)
+        .toList();
+  }
+
+  List<String> getIngredientSuggestions() {
+    // Return common ingredients that could complete recipes
+    final suggestions = <String>[];
+    for (final recipe in _allRecipes) {
+      for (final ingredient in recipe.ingredients) {
+        if (!_pantryList.any((item) => 
+            (item['name'] as String? ?? '').toLowerCase() == ingredient.toLowerCase())) {
+          if (!suggestions.contains(ingredient)) {
+            suggestions.add(ingredient);
+          }
+        }
+      }
+    }
+    return suggestions;
+  }
+
+  // Saved recipes functionality
+  bool isRecipeSaved(String recipeId) {
+    return _savedRecipeIds.contains(recipeId);
+  }
+
+  Future<void> toggleSaveRecipe(String recipeId) async {
+    if (_user == null) return;
+    
+    try {
+      if (_savedRecipeIds.contains(recipeId)) {
+        // Unsave
+        _savedRecipeIds.remove(recipeId);
+      } else {
+        // Save
+        _savedRecipeIds.add(recipeId);
+      }
+      
+      // Update Firestore
+      await _firestore.updateUserProfile({
+        'savedRecipes': _savedRecipeIds,
+      });
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error toggling save recipe: $e");
+      // Revert on error
+      if (_savedRecipeIds.contains(recipeId)) {
+        _savedRecipeIds.remove(recipeId);
+      } else {
+        _savedRecipeIds.add(recipeId);
+      }
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> saveRecipe(String recipeId) async {
+    if (_user == null || _savedRecipeIds.contains(recipeId)) return;
+    
+    try {
+      _savedRecipeIds.add(recipeId);
+      await _firestore.updateUserProfile({
+        'savedRecipes': _savedRecipeIds,
+      });
+      notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error saving recipe: $e");
+      _savedRecipeIds.remove(recipeId);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> unsaveRecipe(String recipeId) async {
+    if (_user == null || !_savedRecipeIds.contains(recipeId)) return;
+    
+    try {
+      _savedRecipeIds.remove(recipeId);
+      await _firestore.updateUserProfile({
+        'savedRecipes': _savedRecipeIds,
+      });
+      notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error unsaving recipe: $e");
+      _savedRecipeIds.add(recipeId);
+      notifyListeners();
+      rethrow;
+    }
   }
 
 

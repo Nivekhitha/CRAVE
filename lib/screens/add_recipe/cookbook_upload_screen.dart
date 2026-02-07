@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
-import '../../services/cookbook_extraction_service.dart';
-import '../../models/recipe.dart';
-import 'cookbook_results_screen.dart'; // Will create next
+import '../../services/recipe_extraction_service.dart';
+import '../../models/extraction_result.dart';
+import '../../widgets/extraction/extraction_progress_widget.dart';
+import 'cookbook_results_screen.dart';
 
 class CookbookUploadScreen extends StatefulWidget {
   const CookbookUploadScreen({super.key});
@@ -15,10 +16,13 @@ class CookbookUploadScreen extends StatefulWidget {
 }
 
 class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
-  final CookbookExtractionService _extractionService = CookbookExtractionService();
+  final RecipeExtractionService _extractionService = RecipeExtractionService();
   bool _isExtracting = false;
-  String _statusMessage = '';
-  double? _progressValue;
+  String _currentStep = '';
+  List<String> _completedSteps = [];
+  List<String> _warnings = [];
+  int? _recipesFound;
+  bool _isComplete = false;
 
   Future<void> _pickAndProcessFile() async {
     if (_isExtracting) return;
@@ -31,8 +35,7 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
       );
 
       if (result == null || result.files.single.path == null) {
-        // User canceled - silently return
-        return;
+        return; // User canceled
       }
 
       final file = File(result.files.single.path!);
@@ -46,21 +49,31 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
 
       setState(() {
         _isExtracting = true;
-        _statusMessage = 'Reading PDF file...';
-        _progressValue = 0.2;
+        _currentStep = 'Preparing extraction...';
+        _completedSteps = [];
+        _warnings = [];
+        _recipesFound = null;
+        _isComplete = false;
       });
 
-      // 2. Extract & Analyze with progress callbacks
-      List<Recipe> recipes = await _extractionService.extractRecipes(
-        file,
-        onProgress: (progress) {
+      // 2. Extract with robust system
+      final extractionResult = await _extractionService.extractRecipe(
+        pdfPath: file.path,
+        onProgress: (step) {
           if (mounted) {
             setState(() {
-              _statusMessage = progress;
-              if (progress.contains('complete')) {
-                _progressValue = 1.0;
-              } else if (progress.contains('Analyzing')) {
-                _progressValue = null; // Indeterminate
+              // Move current step to completed if it's not the first step
+              if (_currentStep.isNotEmpty && !_currentStep.contains('Preparing')) {
+                _completedSteps.add(_currentStep);
+              }
+              _currentStep = step;
+              
+              // Update recipe count if found
+              if (step.contains('recipe') && step.contains('found')) {
+                final match = RegExp(r'(\d+) recipe').firstMatch(step);
+                if (match != null) {
+                  _recipesFound = int.tryParse(match.group(1) ?? '0');
+                }
               }
             });
           }
@@ -69,71 +82,65 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
       
       if (!mounted) return;
 
-      if (recipes.isEmpty) {
-        setState(() {
-          _statusMessage = 'Analysis Complete';
-        });
-        _showErrorDialog(
-          "No recipes found in this PDF.\n\n"
-          "Tips:\n"
-          "• Make sure the PDF contains recipe text (not just images)\n"
-          "• Try a different page or section\n"
-          "• Ensure the text is selectable/copyable",
-        );
-        return;
-      }
-
-      // Small delay to show success message
+      // Handle result
       setState(() {
-        _statusMessage = 'Success! Found ${recipes.length} recipe${recipes.length > 1 ? 's' : ''}.';
-        _progressValue = 1.0;
+        _isComplete = true;
+        _warnings = extractionResult.warnings;
+        _recipesFound = extractionResult.recipeCount;
+        
+        if (extractionResult.hasRecipes) {
+          _currentStep = 'Extraction complete! Found ${extractionResult.recipeCount} recipe${extractionResult.recipeCount == 1 ? '' : 's'}.';
+        } else {
+          _currentStep = 'No recipes found in this document.';
+        }
       });
-      
-      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Small delay to show completion
+      await Future.delayed(const Duration(milliseconds: 1000));
 
       if (!mounted) return;
 
-      // 3. Navigate to Results
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CookbookResultsScreen(
-            recipes: recipes, 
-            sourceFileName: fileName,
-          )
-        ),
-      );
+      if (extractionResult.hasRecipes) {
+        // Navigate to results
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CookbookResultsScreen(
+              recipes: extractionResult.recipes, 
+              sourceFileName: fileName,
+            )
+          ),
+        );
+      } else {
+        // Show helpful error message
+        _showNoRecipesDialog(extractionResult.warnings);
+      }
 
     } catch (e) {
       if (!mounted) return;
       
       setState(() {
-        _statusMessage = '';
-        _progressValue = null;
+        _isExtracting = false;
+        _currentStep = '';
+        _isComplete = false;
       });
       
-      // Extract user-friendly error message
-      String errorMsg = e.toString();
-      if (errorMsg.contains('Exception: ')) {
-        errorMsg = errorMsg.replaceFirst('Exception: ', '');
-      }
-      
-      _showErrorDialog(errorMsg);
-    } finally {
-       if (mounted) {
-         setState(() {
-           _isExtracting = false;
-         });
-       }
+      _showErrorDialog(e.toString());
     }
   }
 
   void _showErrorDialog(String message) {
+    // Clean up error message
+    String cleanMessage = message;
+    if (cleanMessage.startsWith('Exception: ')) {
+      cleanMessage = cleanMessage.substring(11);
+    }
+    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Extraction Failed'),
-        content: Text(message),
+        content: Text(cleanMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -142,6 +149,56 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
         ],
       ),
     );
+  }
+
+  void _showNoRecipesDialog(List<String> warnings) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('No Recipes Found'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Could not find any recipes in this document.'),
+            const SizedBox(height: 16),
+            const Text('Tips:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('• Make sure the PDF contains recipe text (not just images)'),
+            const Text('• Try a different page or section'),
+            const Text('• Ensure the text is selectable/copyable'),
+            if (warnings.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text('Issues found:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ...warnings.map((w) => Text('• $w', style: const TextStyle(fontSize: 12))),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _isExtracting = false;
+                _currentStep = '';
+                _isComplete = false;
+              });
+            },
+            child: const Text('Try Again'),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _cancelExtraction() {
+    setState(() {
+      _isExtracting = false;
+      _currentStep = '';
+      _isComplete = false;
+      _completedSteps = [];
+      _warnings = [];
+      _recipesFound = null;
+    });
   }
 
   @override
@@ -163,49 +220,14 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
           children: [
             if (_isExtracting) ...[
               const Spacer(),
-               Center(
-                 child: Column(
-                   children: [
-                     Container(
-                       padding: const EdgeInsets.all(32),
-                       decoration: BoxDecoration(
-                         color: Colors.white,
-                         shape: BoxShape.circle,
-                         boxShadow: [
-                           BoxShadow(
-                             color: AppColors.primary.withOpacity(0.1),
-                             blurRadius: 20,
-                             spreadRadius: 5
-                           )
-                         ]
-                       ),
-                       child: _progressValue != null
-                           ? CircularProgressIndicator(
-                               value: _progressValue,
-                               strokeWidth: 3,
-                               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                             )
-                           : const CircularProgressIndicator(strokeWidth: 3),
-                     ),
-                     const SizedBox(height: 24),
-                     Container(
-                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                       decoration: BoxDecoration(
-                         color: AppColors.surface,
-                         borderRadius: BorderRadius.circular(12),
-                       ),
-                       child: Text(
-                         _statusMessage,
-                         textAlign: TextAlign.center,
-                         style: AppTextStyles.bodyMedium.copyWith(
-                           color: AppColors.textPrimary,
-                           height: 1.5,
-                         ),
-                       ),
-                     ),
-                   ],
-                 ),
-               ),
+              ExtractionProgressWidget(
+                currentStep: _currentStep,
+                completedSteps: _completedSteps,
+                warnings: _warnings,
+                recipesFound: _recipesFound,
+                isComplete: _isComplete,
+                onCancel: _isComplete ? null : _cancelExtraction,
+              ),
               const Spacer(),
             ] else ...[
               const Spacer(),
@@ -253,7 +275,7 @@ class _CookbookUploadScreenState extends State<CookbookUploadScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Works best with PDFs containing selectable text. Image-only PDFs may not work.",
+                        "Works best with PDFs containing selectable text. Our robust system will retry automatically if needed.",
                         style: AppTextStyles.labelSmall.copyWith(color: Colors.blue[800]),
                       ),
                     )

@@ -16,13 +16,15 @@ class JournalScreen extends StatelessWidget {
           appBar: AppBar(
             title: Text('Food Journal', style: AppTextStyles.headlineMedium),
             centerTitle: true,
-            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           ),
-          body: premium.isPremium
+          body: premium.isPremium.value
               ? const JournalDashboard()
-              : PaywallView(
-                  isLoading: premium.isLoading,
-                  onUnlock: () => premium.unlockPremium(),
+              : const PaywallView(
+                  featureId: 'journal',
                 ),
         );
       },

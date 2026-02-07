@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import '../models/recipe.dart';
+import 'extraction_retry_service.dart';
 
 class RecipeAiService {
   final String? _apiKey;
@@ -17,6 +18,21 @@ class RecipeAiService {
       throw Exception('Gemini API Key is missing. Please check your .env file.');
     }
 
+    // Use retry service with AI-specific configuration
+    final retryConfig = ExtractionRetryService.getRetryConfig('ai');
+    
+    return await ExtractionRetryService.withRetry<List<Recipe>>(
+      () async => _tryAnalyzeText(key, text),
+      maxRetries: retryConfig['maxRetries'],
+      baseDelay: retryConfig['baseDelay'],
+      shouldRetry: ExtractionRetryService.isRetryableError,
+      onRetry: (attempt, error, nextDelay) {
+        debugPrint("🔄 AI Service retry $attempt: $error (waiting ${nextDelay.inSeconds}s)");
+      },
+    );
+  }
+
+  Future<List<Recipe>> _tryAnalyzeText(String key, String text) async {
     // Try available models in order of preference: standard flash first for speed/stability
     final models = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-1.5-pro'];
     
@@ -95,20 +111,20 @@ $truncatedText
 
   Exception _refinedException(dynamic e) {
       String msg = e.toString();
-      String userMessage = "Extraction Failed: $msg";
       
       if (msg.contains("not found") || msg.contains("404")) {
-         // It might be a model name error or API enable error
-         userMessage = "API Error (404): Model not found or API disabled.\nRaw: $msg";
+         return Exception("Model not available. Please try again later.");
       } else if (msg.contains("API_KEY_INVALID") || msg.contains("403")) {
-         userMessage = "Auth Error: Invalid API Key.\nRaw: $msg";
+         return Exception("Invalid API key. Please check your configuration.");
       } else if (msg.contains("SocketException") || msg.contains("Failed to host") || msg.contains("Network")) {
-         userMessage = "Network Error: check internet connection.\nRaw: $msg";
+         return Exception("Network connection issue. Please check your internet.");
       } else if (msg.contains("quota") || msg.contains("429")) {
-         userMessage = "Quota Exceeded: Try again later.";
+         return Exception("Service is busy. Please try again in a few minutes.");
+      } else if (msg.contains("timeout")) {
+         return Exception("Request timed out. The document might be too large.");
       }
       
-      return Exception(userMessage);
+      return Exception("Extraction service temporarily unavailable. Please try again.");
   }
 
   /// Public for testing parsing logic in isolation
@@ -159,6 +175,22 @@ $truncatedText
     if (key == null || key.isEmpty) {
       throw Exception('Gemini API Key is missing. Please check your .env file.');
     }
+
+    // Use retry service for mood suggestions too
+    final retryConfig = ExtractionRetryService.getRetryConfig('ai');
+    
+    return await ExtractionRetryService.withRetry<List<Recipe>>(
+      () async => _tryMoodSuggestion(key, emotion, fridgeItems),
+      maxRetries: retryConfig['maxRetries'],
+      baseDelay: retryConfig['baseDelay'],
+      shouldRetry: ExtractionRetryService.isRetryableError,
+      onRetry: (attempt, error, nextDelay) {
+        debugPrint("🔄 Mood suggestion retry $attempt: $error");
+      },
+    );
+  }
+
+  Future<List<Recipe>> _tryMoodSuggestion(String key, String emotion, List<String> fridgeItems) async {
 
     final model = GenerativeModel(
       model: 'gemini-2.5-flash',
@@ -217,8 +249,7 @@ Rules:
 
     } catch (e) {
       debugPrint("❌ Mood Recipe Error: $e");
-       // Pass through the exception message cleanly
-       throw Exception(e.toString().replaceAll('Exception:', '').trim());
+      throw Exception(ExtractionRetryService.getFriendlyErrorMessage(e, 1));
     }
   }
 }

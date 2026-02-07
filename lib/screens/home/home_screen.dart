@@ -6,6 +6,9 @@ import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
 import '../../services/premium_service.dart';
 import '../../services/firestore_service.dart'; 
+import '../../services/journal_service.dart'; 
+import '../../services/nutrition_service.dart';
+import '../../widgets/premium/premium_gate.dart';
 
 // Screens
 import '../discovery/discovery_screen.dart'; 
@@ -18,11 +21,17 @@ import '../emotional_cooking/emotional_cooking_screen.dart';
 import '../cooking_journey/cooking_journey_screen.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 import '../journal/journal_screen.dart'; 
+import '../nutrition/nutrition_dashboard_screen.dart';
+import '../meal_planning/meal_planning_screen.dart';
+import '../dietitian/ai_dietitian_chat_screen.dart';
 
 // New Widgets
 import '../../widgets/home/home_header.dart';
 import '../../widgets/cards/hero_action_card.dart';
 import '../../widgets/cards/recipe_card_horizontal.dart';
+import '../../widgets/home/quick_action_bottom_sheet.dart';
+import '../../widgets/nutrition/nutrition_snapshot_card.dart';
+import '../../services/image_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,96 +41,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<PremiumService>(context, listen: false).initialize();
+      Provider.of<JournalService>(context, listen: false).init();
+      Provider.of<NutritionService>(context, listen: false).init();
     });
-  }
-
-  final List<Widget> _screens = [
-    const _HomeView(),
-    const DiscoveryScreen(), 
-    const SizedBox(), 
-    const JournalScreen(), 
-    const ProfileScreen(),
-  ];
-
-  void _onTabTapped(int index) {
-    if (index == 2) {
-      _showAddBottomSheet();
-      return;
-    }
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  void _showAddBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => const AddRecipeOptionsScreen(),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.creamWhite,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          backgroundColor: AppColors.surface,
-          selectedItemColor: AppColors.freshMint,
-          unselectedItemColor: AppColors.slate,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.compass), 
-              label: 'Discover',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.plusCircle, size: 32, color: AppColors.warmPeach),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.bookOpen), 
-              label: 'Journal',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(LucideIcons.user),
-              label: 'Profile',
-            ),
-          ],
-        ),
-      ),
-    );
+    // HomeScreen is just the home view - navigation handled by MainNavigationScreen
+    return const _HomeView();
   }
 }
 
@@ -133,7 +66,7 @@ class _HomeView extends StatelessWidget {
     return Consumer<UserProvider>(builder: (context, userProvider, child) {
       final matches = userProvider.recipeMatches;
       final username = userProvider.username ?? 'Chef';
-      const avatarUrl = ''; 
+      final avatarUrl = ImageService().getUserAvatarUrl(username); 
 
       return CustomScrollView(
         slivers: [
@@ -146,6 +79,41 @@ class _HomeView extends StatelessWidget {
           ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // Nutrition Snapshot Card - REMOVED (available in Journal)
+          // Users can access nutrition dashboard from Journal tab
+          // SliverToBoxAdapter(
+          //   child: Padding(
+          //     padding: const EdgeInsets.symmetric(horizontal: 24),
+          //     child: GestureDetector(
+          //       onTap: () {
+          //         Navigator.push(
+          //           context, 
+          //           MaterialPageRoute(
+          //             builder: (_) => NutritionGate(
+          //               child: const NutritionDashboardScreen(),
+          //             ),
+          //           ),
+          //         );
+          //       },
+          //       child: NutritionSnapshotCard(
+          //         showDetails: false,
+          //         onTap: () {
+          //           Navigator.push(
+          //             context, 
+          //             MaterialPageRoute(
+          //               builder: (_) => NutritionGate(
+          //                 child: const NutritionDashboardScreen(),
+          //               ),
+          //             ),
+          //           );
+          //         },
+          //       ),
+          //     ),
+          //   ),
+          // ),
+
+          // const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
           // Vertical Hero Actions
           SliverToBoxAdapter(
@@ -215,9 +183,8 @@ class _HomeView extends StatelessWidget {
                     final match = matches[index];
                     final recipe = match.recipe;
                     return RecipeCardHorizontal(
-                      title: recipe.title,
-                      imageUrl: "https://source.unsplash.com/random/800x600/?food,${recipe.title.replaceAll(' ', ',')}", 
-                      time: "${recipe.cookTime}m",
+                      recipe: recipe,
+                      time: recipe.cookTime != null ? "${recipe.cookTime}m" : null,
                       calories: "350 kcal", 
                       matchPercentage: match.matchPercentage.round(),
                       onTap: () {

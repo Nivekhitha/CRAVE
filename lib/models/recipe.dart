@@ -53,6 +53,36 @@ class Recipe extends HiveObject {
   @HiveField(15)
   String? difficulty; // 'Easy', 'Medium', 'Hard'
 
+  @HiveField(16)
+  double? calories; // Nutritional information
+
+  @HiveField(17)
+  double? protein;
+
+  @HiveField(18)
+  double? carbs;
+
+  @HiveField(19)
+  double? fats;
+
+  @HiveField(20)
+  double? fiber;
+
+  @HiveField(21)
+  double? sugar;
+
+  @HiveField(22)
+  double? sodium; // mg
+
+  @HiveField(23)
+  Map<String, double>? vitamins; // Vitamin A, C, D, etc.
+
+  @HiveField(24)
+  Map<String, double>? minerals; // Iron, Calcium, etc.
+
+  @HiveField(25)
+  int? glycemicIndex;
+
   // Non-persisted field for demo flow (Extraction -> Editor)
   String? description;
 
@@ -74,6 +104,16 @@ class Recipe extends HiveObject {
     this.tags,
     this.difficulty,
     this.description,
+    this.calories,
+    this.protein,
+    this.carbs,
+    this.fats,
+    this.fiber,
+    this.sugar,
+    this.sodium,
+    this.vitamins,
+    this.minerals,
+    this.glycemicIndex,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Calculated properties
@@ -122,6 +162,16 @@ class Recipe extends HiveObject {
       'cookCount': cookCount,
       'tags': tags,
       'difficulty': difficulty,
+      'calories': calories,
+      'protein': protein,
+      'carbs': carbs,
+      'fats': fats,
+      'fiber': fiber,
+      'sugar': sugar,
+      'sodium': sodium,
+      'vitamins': vitamins,
+      'minerals': minerals,
+      'glycemicIndex': glycemicIndex,
     };
   }
 
@@ -143,6 +193,16 @@ class Recipe extends HiveObject {
       cookCount: map['cookCount'] ?? 0,
       tags: map['tags'] != null ? List<String>.from(map['tags']) : null,
       difficulty: map['difficulty'],
+      calories: map['calories']?.toDouble(),
+      protein: map['protein']?.toDouble(),
+      carbs: map['carbs']?.toDouble(),
+      fats: map['fats']?.toDouble(),
+      fiber: map['fiber']?.toDouble(),
+      sugar: map['sugar']?.toDouble(),
+      sodium: map['sodium']?.toDouble(),
+      vitamins: map['vitamins'] != null ? Map<String, double>.from(map['vitamins']) : null,
+      minerals: map['minerals'] != null ? Map<String, double>.from(map['minerals']) : null,
+      glycemicIndex: map['glycemicIndex'],
     );
   }
 

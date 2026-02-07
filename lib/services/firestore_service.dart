@@ -46,7 +46,14 @@ class FirestoreService {
         'email': email,
         'createdAt': FieldValue.serverTimestamp(),
         'isPremium': false, // Default to free tier
+        'savedRecipes': [], // Initialize empty saved recipes list
       }, SetOptions(merge: true));
+    });
+  }
+
+  Future<void> updateUserProfile(Map<String, dynamic> updates) async {
+    await _perform(() async {
+      await _userDoc().update(updates);
     });
   }
 
