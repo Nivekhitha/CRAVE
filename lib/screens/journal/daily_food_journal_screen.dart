@@ -6,9 +6,6 @@ import '../../app/app_text_styles.dart';
 import '../../services/journal_service.dart';
 import '../../models/journal_entry.dart';
 import '../../widgets/premium/premium_gate.dart';
-import '../../providers/user_provider.dart';
-import '../../models/recipe.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class DailyFoodJournalScreen extends StatefulWidget {
   const DailyFoodJournalScreen({super.key});
@@ -561,92 +558,20 @@ class _AddMealBottomSheetState extends State<_AddMealBottomSheet> {
               ),
               const SizedBox(height: 24),
               
-              Consumer<UserProvider>(
-                builder: (context, userProvider, child) {
-                  return RawAutocomplete<String>(
-                    textEditingController: _nameController,
-
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      if (textEditingValue.text.isEmpty) {
-                        return const Iterable<String>.empty();
-                      }
-                      
-                      final query = textEditingValue.text.toLowerCase();
-                      
-                      // Filter Pantry Items
-                      final pantryMatches = userProvider.pantryList.where((item) {
-                        final name = (item['name'] as String? ?? '').toLowerCase();
-                        return name.contains(query);
-                      }).map((item) => item['name'] as String).toList();
-
-                      // Filter Recipes
-                      final recipeMatches = userProvider.allRecipes.where((recipe) {
-                        return recipe.title.toLowerCase().contains(query);
-                      }).map((recipe) => recipe.title).toList();
-
-                      return [...pantryMatches, ...recipeMatches];
-                    },
-                    onSelected: (String selection) {
-                      _nameController.text = selection;
-                    },
-                    fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                      return TextFormField(
-                        controller: textEditingController,
-                        focusNode: focusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Meal Name',
-                          hintText: 'Type to search pantry or recipes...',
-                          border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.search),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a meal name';
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                    optionsViewBuilder: (context, onSelected, options) {
-                      return Align(
-                        alignment: Alignment.topLeft,
-                        child: Material(
-                          elevation: 4.0,
-                          borderRadius: BorderRadius.circular(8),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 250, maxWidth: 340), // Adjust width as needed or use LayoutBuilder
-                            child: ListView.builder(
-                              padding: EdgeInsets.zero,
-                              shrinkWrap: true,
-                              itemCount: options.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                final option = options.elementAt(index);
-                                
-                                return ListTile(
-                                  leading: Icon(Icons.fastfood, color: AppColors.primary),
-                                  title: Text(option),
-                                  onTap: () => onSelected(option),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Meal Name',
+                  hintText: 'e.g., Grilled Chicken Salad',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a meal name';
+                  }
+                  return null;
                 },
               ),
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(color: Colors.grey[200]),
-                                      errorWidget: (context, url, error) => Icon(icon, color: color, size: 20),
-                                    ),
-                                  );
-                                } else {
-                                  leadingWidget = Icon(icon, color: color, size: 20);
-                                }
-
-                                return ListTile(
               const SizedBox(height: 16),
               
               Row(
