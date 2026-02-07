@@ -10,6 +10,8 @@ class CraveApp extends StatelessWidget {
     return MaterialApp(
       title: 'Crave',
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.lightTheme, // Force light theme even in dark mode
+      themeMode: ThemeMode.light, // Always use light theme
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,
     );
