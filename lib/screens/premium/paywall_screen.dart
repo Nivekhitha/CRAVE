@@ -265,7 +265,7 @@ class _PaywallScreenState extends State<PaywallScreen>
   }
 
   Widget _buildPricingSection(PremiumService premiumService) {
-    if (premiumService.isLoading && !premiumService.isOfferingsLoaded) {
+    if (premiumService.isLoading && !premiumService.isInitialized) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(32.0),
@@ -278,7 +278,7 @@ class _PaywallScreenState extends State<PaywallScreen>
 
     return Column(
       children: [
-        if (!premiumService.isOfferingsLoaded)
+        if (!premiumService.isInitialized)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Text(
