@@ -44,52 +44,50 @@ class RecipeCardHorizontal extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Image Section
-            SizedBox(
-              height: 140,
-              width: double.infinity,
-              child: SmartRecipeImage(
-                recipe: recipe,
-                size: ImageSize.card,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                fit: BoxFit.cover,
-              ),
-            ),
-             // Match Badge
-            if (matchPercentage > 0)
-              Transform.translate(
-                offset: const Offset(-12, -132), // Manually positioning over the image
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(LucideIcons.sparkles, size: 12, color: AppColors.warmPeach),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$matchPercentage%',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.charcoal,
-                            fontWeight: FontWeight.bold,
+            Stack(
+              children: [
+                SmartRecipeImage(
+                  recipe: recipe,
+                  size: ImageSize.card,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  fit: BoxFit.cover,
+                ),
+                // Match Badge
+                if (matchPercentage > 0)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(LucideIcons.sparkles, size: 12, color: AppColors.warmPeach),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$matchPercentage%',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.charcoal,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ),
+              ],
+            ),
             
             // Content Section
             Padding(

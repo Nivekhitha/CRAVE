@@ -6,6 +6,9 @@ import '../../providers/user_provider.dart';
 import '../../services/user_stats_service.dart';
 import '../../models/recipe.dart';
 import '../cooking/cooking_session_screen.dart';
+import '../../widgets/images/smart_recipe_image.dart';
+import '../../services/image_service.dart';
+import '../../utils/ingredient_normalizer.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -48,21 +51,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
-        // Determine which ingredients we have
-        final pantryNames = userProvider.pantryList
-            .map((e) => (e['name'] as String).toLowerCase())
-            .toSet();
+        // Use production-grade normalization for matching
+        final pantrySet = normalizeIngredientSet(
+          userProvider.pantryList
+              .map((e) => e['name'] as String? ?? '')
+              .toList(),
+        );
 
         // Map ingredients to display model
         final displayIngredients = recipe.ingredients.map((rawName) {
-          bool hasIt = false;
-          final lower = rawName.toLowerCase();
-          if (pantryNames.contains(lower)) {
-            hasIt = true;
-          } else {
-            hasIt =
-                pantryNames.any((p) => p.contains(lower) || lower.contains(p));
-          }
+          final normalized = normalizeIngredient(rawName);
+          final hasIt = normalized.isNotEmpty && pantrySet.contains(normalized);
 
           return {'name': rawName, 'amount': '', 'has': hasIt};
         }).toList();
@@ -164,39 +163,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             const SizedBox(height: 24),
 
                             // Hero Image Card
-                            Container(
-                              height: 200,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                              ),
-                              child: recipe.imageUrl != null &&
-                                      recipe.imageUrl!.isNotEmpty
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: Image.network(
-                                        recipe.imageUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            color: AppColors.primary
-                                                .withValues(alpha: 0.1),
-                                          ),
-                                          child: const Center(
-                                            child: Icon(Icons.restaurant_menu,
-                                                color: AppColors.primary,
-                                                size: 60),
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  : const Center(
-                                      child: Icon(Icons.restaurant_menu,
-                                          color: AppColors.primary, size: 60),
-                                    ),
+                            SmartRecipeImage(
+                              recipe: recipe,
+                              size: ImageSize.detail,
+                              borderRadius: BorderRadius.circular(16),
+                              fit: BoxFit.cover,
                             ),
 
                             const SizedBox(height: 32),

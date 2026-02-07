@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../app/app_colors.dart';
 import '../app/app_text_styles.dart';
+import 'images/smart_recipe_image.dart';
+import '../services/image_service.dart';
 
 class RecipeCard extends StatelessWidget {
   final Recipe recipe;
+  final int? matchPercentage;
   final VoidCallback? onTap;
 
   const RecipeCard({
     super.key,
     required this.recipe,
+    this.matchPercentage,
     this.onTap,
   });
 
@@ -34,28 +38,43 @@ class RecipeCard extends StatelessWidget {
           children: [
             // Image
             Expanded(
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Container(
-                  color: Colors.grey[300],
-                  width: double.infinity,
-                  child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          recipe.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (ctx, _, __) => Container(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            child: const Icon(Icons.restaurant_menu,
-                                color: AppColors.primary, size: 40),
-                          ),
-                        )
-                      : Container(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          child: const Icon(Icons.restaurant_menu,
-                              color: AppColors.primary, size: 40),
+              child: Stack(
+                children: [
+                  SmartRecipeImage(
+                    recipe: recipe,
+                    size: ImageSize.card,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
+                  if (matchPercentage != null && matchPercentage! > 0)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                ),
+                        decoration: BoxDecoration(
+                          color: _getMatchColor(matchPercentage!.toDouble()),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '$matchPercentage%',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             // Info
@@ -104,5 +123,11 @@ class RecipeCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getMatchColor(double percentage) {
+    if (percentage >= 80) return Colors.green;
+    if (percentage >= 60) return Colors.orange;
+    return Colors.red;
   }
 }
