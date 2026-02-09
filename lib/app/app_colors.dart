@@ -123,9 +123,7 @@ class AppColors {
   
   static const LinearGradient freshStart = magicHour; // Map to new gradient
   static const LinearGradient goldenHour = magicHour; // Map to new gradient
-}
-
-
+  
   // Dynamic Theme-Aware Getters
   static Color getBg(BuildContext context) => 
       Theme.of(context).brightness == Brightness.dark ? bgDark : bg;
