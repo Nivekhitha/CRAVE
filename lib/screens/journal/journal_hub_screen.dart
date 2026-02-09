@@ -58,7 +58,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
   Widget build(BuildContext context) {
     return JournalGate(
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: FadeTransition(
           opacity: _fadeAnimation,
           child: SafeArea(
@@ -107,13 +107,14 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                   'Food Journal',
                   style: AppTextStyles.headlineLarge.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Track your nutrition journey',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -166,13 +167,13 @@ class _JournalHubScreenState extends State<JournalHubScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.primary.withOpacity(0.1),
-                AppColors.accent.withOpacity(0.05),
+                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: AppColors.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             ),
           ),
           child: Column(
@@ -226,12 +227,13 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                           style: AppTextStyles.headlineLarge.copyWith(
                             fontWeight: FontWeight.bold,
                             fontSize: 36,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         Text(
                           'of $targetCalories cal',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -304,12 +306,13 @@ class _JournalHubScreenState extends State<JournalHubScreen>
           value,
           style: AppTextStyles.titleMedium.copyWith(
             fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -324,6 +327,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
           'Quick Actions',
           style: AppTextStyles.titleLarge.copyWith(
             fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -386,13 +390,14 @@ class _JournalHubScreenState extends State<JournalHubScreen>
               title,
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               subtitle,
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -416,6 +421,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                   'Today\'s Meals',
                   style: AppTextStyles.titleLarge.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 TextButton(
@@ -456,10 +462,10 @@ class _JournalHubScreenState extends State<JournalHubScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         ),
       ),
       child: Column(
@@ -467,20 +473,20 @@ class _JournalHubScreenState extends State<JournalHubScreen>
           Icon(
             Icons.restaurant_menu,
             size: 48,
-            color: AppColors.textSecondary.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           Text(
             'No meals logged today',
             style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Start tracking your nutrition by logging your first meal',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -505,7 +511,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
       margin: const EdgeInsets.only(right: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -537,7 +543,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                 child: Text(
                   _getMealTypeName(entry.mealType),
                   style: AppTextStyles.labelMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -548,6 +554,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
             entry.name,
             style: AppTextStyles.titleSmall.copyWith(
               fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -576,6 +583,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
               'This Week',
               style: AppTextStyles.titleLarge.copyWith(
                 fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             TextButton(
@@ -623,10 +631,10 @@ class _JournalHubScreenState extends State<JournalHubScreen>
       width: 60,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: isToday ? AppColors.primary : AppColors.surface,
+        color: isToday ? AppColors.primary : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isToday ? AppColors.primary : AppColors.surface,
+          color: isToday ? AppColors.primary : Theme.of(context).dividerColor,
         ),
       ),
       child: Column(
@@ -635,7 +643,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
           Text(
             dayNames[date.weekday - 1],
             style: AppTextStyles.labelSmall.copyWith(
-              color: isToday ? Colors.white : AppColors.textSecondary,
+              color: isToday ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -643,7 +651,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
           Text(
             '${date.day}',
             style: AppTextStyles.titleMedium.copyWith(
-              color: isToday ? Colors.white : AppColors.textPrimary,
+              color: isToday ? Colors.white : Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -665,10 +673,10 @@ class _JournalHubScreenState extends State<JournalHubScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         ),
       ),
       child: Column(
@@ -681,6 +689,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                 'Nutrition Snapshot',
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               TextButton(
@@ -737,7 +746,9 @@ class _JournalHubScreenState extends State<JournalHubScreen>
         const SizedBox(width: 8),
         Text(
           label,
-          style: AppTextStyles.bodyMedium,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         const Spacer(),
         Text(
@@ -794,12 +805,13 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                       'AI Dietitian',
                       style: AppTextStyles.titleMedium.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Text(
                       'Your personal nutrition coach',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -821,12 +833,15 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                   '💡 Today\'s Tip',
                   style: AppTextStyles.labelMedium.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'You\'re doing great with protein intake! Try adding more colorful vegetables to boost your vitamin intake.',
-                  style: AppTextStyles.bodyMedium,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
