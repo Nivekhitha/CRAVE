@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result.isSuccess) {
       if (mounted) {
-         Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+         Navigator.of(context).pushReplacementNamed(AppRoutes.main);
       }
     } else {
       if (mounted) {
@@ -167,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   if (result.isSuccess) {
                     if (mounted) {
-                       Navigator.pushReplacementNamed(context, AppRoutes.home);
+                       Navigator.pushReplacementNamed(context, AppRoutes.main);
                     }
                   } else {
                     if (mounted) {

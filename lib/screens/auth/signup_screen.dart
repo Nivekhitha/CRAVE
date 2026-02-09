@@ -61,7 +61,7 @@ class _SignupScreenState extends State<SignupScreen> {
         // Success - navigation will be handled by auth state stream
         if (mounted) {
           Navigator.of(context)
-              .pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+              .pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
         }
       } else {
         // Show error

@@ -33,15 +33,21 @@ class CookingStep {
 
   /// Extract duration from step text using regex
   static Duration? _extractDuration(String text) {
-    // Pattern matches: "2 min", "5 mins", "10 minutes", "15 minute"
-    final regex = RegExp(r'(\d+)\s*(min|mins|minute|minutes)\b', caseSensitive: false);
-    final match = regex.firstMatch(text);
+    // Check for hours first
+    final hourRegex = RegExp(r'(\d+)\s*(hour|hr|hours|hrs)\b', caseSensitive: false);
+    final hourMatch = hourRegex.firstMatch(text);
+    if (hourMatch != null) {
+      final hours = int.tryParse(hourMatch.group(1) ?? '');
+      if (hours != null && hours > 0) return Duration(hours: hours);
+    }
+
+    // Check for minutes (handle ranges like "20-30 mins" by taking lower bound)
+    final minRegex = RegExp(r'(\d+)(?:-\d+)?\s*(min|mins|minute|minutes)\b', caseSensitive: false);
+    final minMatch = minRegex.firstMatch(text);
     
-    if (match != null) {
-      final minutes = int.tryParse(match.group(1) ?? '');
-      if (minutes != null && minutes > 0) {
-        return Duration(minutes: minutes);
-      }
+    if (minMatch != null) {
+      final minutes = int.tryParse(minMatch.group(1) ?? '');
+      if (minutes != null && minutes > 0) return Duration(minutes: minutes);
     }
     
     return null;

@@ -22,6 +22,16 @@ class JournalService extends ChangeNotifier {
   int get todayCarbs => _todayEntries.fold(0, (sum, e) => sum + e.carbs);
   int get todayFats => _todayEntries.fold(0, (sum, e) => sum + e.fats);
 
+  // Statistics
+  int _currentStreak = 0;
+  int get currentStreak => _currentStreak;
+
+  int _totalMealsLogged = 0;
+  int get totalMealsLogged => _totalMealsLogged;
+
+  int _totalRecipesCooked = 0;
+  int get totalRecipesCooked => _totalRecipesCooked;
+
   /// Initialize Hive box and load initial data
   Future<void> init() async {
     if (_isInitialized) return;
@@ -77,6 +87,70 @@ class JournalService extends ChangeNotifier {
     
     // No notifyListeners here to avoid build loops if called during build, 
     // but typically this is called from methods that will notify.
+    _calculateStats();
+  }
+
+  /// Calculate statistics from all local entries
+  void _calculateStats() {
+    if (_box == null) return;
+
+    final allMaps = _box!.values.cast<Map<dynamic, dynamic>>();
+    final allEntries = allMaps.map((m) => JournalEntry.fromMap(m)).toList();
+
+    // 1. Total Meals
+    _totalMealsLogged = allEntries.length;
+
+    // 2. Recipes Cooked
+    _totalRecipesCooked = allEntries.where((e) => e.recipeId != null).length;
+
+    // 3. Current Streak
+    if (allEntries.isEmpty) {
+      _currentStreak = 0;
+      return;
+    }
+
+    final uniqueDates = allEntries
+        .map((e) => DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a)); // Descending
+
+    if (uniqueDates.isEmpty) {
+      _currentStreak = 0;
+      return;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    int streak = 0;
+    
+    // Check if streak starts today or yesterday
+    // If the latest log is before yesterday, streak is broken -> 0
+    if (uniqueDates.first.isBefore(yesterday)) {
+      _currentStreak = 0;
+      return;
+    }
+
+    // Start counting
+    // We strictly check consecutive days backwards
+    DateTime expectedDate = uniqueDates.first;
+    
+    // If the latest date is Today, we start checking from Today backwards.
+    // If the latest date is Yesterday, we start from Yesterday backwards.
+    // The previous check ensures we haven't missed more than 1 day.
+    
+    for (final date in uniqueDates) {
+      if (date.year == expectedDate.year && date.month == expectedDate.month && date.day == expectedDate.day) {
+        streak++;
+        expectedDate = expectedDate.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+    
+    _currentStreak = streak;
   }
   
   /// Sync all pending entries

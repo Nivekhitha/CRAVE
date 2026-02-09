@@ -5,7 +5,7 @@ import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
 import '../../services/user_stats_service.dart';
 import '../../models/recipe.dart';
-import '../cooking/cooking_session_screen.dart';
+import '../cooking/cooking_screen.dart';
 import '../../widgets/images/smart_recipe_image.dart';
 import '../../services/image_service.dart';
 import '../../utils/ingredient_normalizer.dart';
@@ -407,7 +407,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => CookingSessionScreen(recipe: recipe),
+                              builder: (_) => CookingScreen(recipe: recipe),
                             ),
                           );
                         },

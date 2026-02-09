@@ -3,35 +3,29 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../app/routes.dart';
 import '../../providers/user_provider.dart';
 import '../../services/premium_service.dart';
-import '../../services/firestore_service.dart'; 
-import '../../services/journal_service.dart'; 
+import '../../services/journal_service.dart';
 import '../../services/nutrition_service.dart';
-import '../../widgets/premium/premium_gate.dart';
+import '../../services/image_service.dart';
 
 // Screens
 import '../discovery/discovery_screen.dart'; 
 import '../grocery/grocery_screen.dart';
-import '../match/match_screen.dart';
 import '../pantry/pantry_screen.dart';
-import '../profile/profile_screen.dart';
 import '../add_recipe/add_recipe_options_screen.dart';
 import '../emotional_cooking/emotional_cooking_screen.dart';
-import '../cooking_journey/cooking_journey_screen.dart';
 import '../recipe_detail/recipe_detail_screen.dart';
 import '../journal/journal_screen.dart'; 
-import '../nutrition/nutrition_dashboard_screen.dart';
 import '../meal_planning/meal_planning_screen.dart';
-import '../dietitian/ai_dietitian_chat_screen.dart';
 
-// New Widgets
-import '../../widgets/home/home_header.dart';
-import '../../widgets/cards/hero_action_card.dart';
-import '../../widgets/cards/recipe_card_horizontal.dart';
-import '../../widgets/home/quick_action_bottom_sheet.dart';
-import '../../widgets/nutrition/nutrition_snapshot_card.dart';
-import '../../services/image_service.dart';
+// Revamp Widgets
+import '../../widgets/home_revamp/home_header_revamp.dart';
+import '../../widgets/home_revamp/quick_action_grid.dart';
+import '../../widgets/home_revamp/mood_cooking_banner.dart';
+import '../../widgets/home_revamp/section_header.dart';
+import '../../widgets/home_revamp/recipe_card_revamp.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -53,7 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // HomeScreen is just the home view - navigation handled by MainNavigationScreen
     return const _HomeView();
   }
 }
@@ -65,367 +58,163 @@ class _HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<UserProvider>(builder: (context, userProvider, child) {
       final matches = userProvider.recipeMatches;
+      final savedCount = userProvider.savedRecipes.length;
       final username = userProvider.username ?? 'Chef';
       final avatarUrl = ImageService().getUserAvatarUrl(username); 
 
-      return CustomScrollView(
-        slivers: [
-          // Header
-          SliverToBoxAdapter(
-            child: SafeArea(
-              bottom: false,
-              child: HomeHeader(userName: username, avatarUrl: avatarUrl),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // Nutrition Snapshot Card - REMOVED (available in Journal)
-          // Users can access nutrition dashboard from Journal tab
-          // SliverToBoxAdapter(
-          //   child: Padding(
-          //     padding: const EdgeInsets.symmetric(horizontal: 24),
-          //     child: GestureDetector(
-          //       onTap: () {
-          //         Navigator.push(
-          //           context, 
-          //           MaterialPageRoute(
-          //             builder: (_) => NutritionGate(
-          //               child: const NutritionDashboardScreen(),
-          //             ),
-          //           ),
-          //         );
-          //       },
-          //       child: NutritionSnapshotCard(
-          //         showDetails: false,
-          //         onTap: () {
-          //           Navigator.push(
-          //             context, 
-          //             MaterialPageRoute(
-          //               builder: (_) => NutritionGate(
-          //                 child: const NutritionDashboardScreen(),
-          //               ),
-          //             ),
-          //           );
-          //         },
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          // const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          // Vertical Hero Actions
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  HeroActionCard(
-                    title: 'Upload Cookbook',
-                    subtitle: 'Extract recipes from PDF',
-                    icon: LucideIcons.fileText,
-                    gradient: AppColors.freshStart,
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 12),
-                  HeroActionCard(
-                    title: 'Instagram',
-                    subtitle: 'Save from Reels',
-                    icon: LucideIcons.instagram,
-                    gradient: AppColors.magicHour,
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 12),
-                  HeroActionCard(
-                    title: 'Mood Cooking',
-                    subtitle: 'Cook by emotion',
-                    icon: LucideIcons.smile,
-                    gradient: AppColors.goldenHour,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const EmotionalCookingScreen()));
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-          // Today's Picks
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Today\'s Picks', style: AppTextStyles.headlineMedium),
-                  if (matches.isNotEmpty)
-                     Text('${matches.length} matches', style: AppTextStyles.labelSmall),
-                ],
-              ),
-            ),
-          ),
-          
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 250,
-              child: matches.isEmpty 
-              ? _buildEmptyMatchState(context, userProvider)
-              : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: matches.length > 5 ? 5 : matches.length,
-                  itemBuilder: (context, index) {
-                    final match = matches[index];
-                    final recipe = match.recipe;
-                    return RecipeCardHorizontal(
-                      recipe: recipe,
-                      time: recipe.cookTime != null ? "${recipe.cookTime}m" : null,
-                      calories: "350 kcal", 
-                      matchPercentage: match.matchPercentage.round(),
-                      onTap: () {
-                         Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: recipe)));
-                      },
-                    );
-                  },
+      return Scaffold( // Wrapped in scaffold to ensure bg color if used standalone
+        backgroundColor: AppColors.background,
+        body: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // 1. Sticky Header
+            SliverToBoxAdapter(
+              child: SafeArea( // Move SafeArea inside for seamless sticky effect if we used SliverAppBar
+                bottom: false,
+                child: HomeHeaderRevamp(
+                  userName: username,
+                  avatarUrl: avatarUrl,
                 ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-          // From Your Fridge
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('From Your Fridge', style: AppTextStyles.headlineMedium),
-                  if (userProvider.pantryList.isNotEmpty)
-                    GestureDetector(
-                      onTap: () {
-                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen()));
-                      },
-                      child: Text('See All', style: AppTextStyles.labelMedium.copyWith(color: AppColors.freshMint)),
-                    ),
-                ],
               ),
             ),
-          ),
-          
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Fridge Items List
-          SliverToBoxAdapter(
-             child: SizedBox(
-              height: 100,
-              child: userProvider.pantryList.isEmpty
-                ? ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    children: [
-                       _buildAddFridgeItem(context),
-                    ],
-                  )
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: (userProvider.pantryList.length > 5 ? 5 : userProvider.pantryList.length) + 1,
-                    itemBuilder: (context, index) {
-                      if (index == (userProvider.pantryList.length > 5 ? 5 : userProvider.pantryList.length)) {
-                        return _buildAddFridgeItem(context);
-                      }
-                      
-                      final item = userProvider.pantryList[index];
-                      // Use safety checks for types
-                      final name = item['name'] ?? 'Ingredient';
-                      // Handle quantity which might be int or String
-                      final rawQty = item['quantity'];
-                      String qtyDisplay = '1';
-                      if (rawQty != null) {
-                        qtyDisplay = rawQty.toString();
-                      }
-                      
-                      return _buildFridgeItem(name, qtyDisplay);
-                    },
+            // 2. Search Bar
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.search, size: 20, color: AppColors.textSecondary),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Search recipes...',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // 3. Quick Actions Grid (2x2)
+            SliverToBoxAdapter(
+              child: QuickActionGrid(
+                pantryCount: userProvider.pantryList.length,
+                groceryCount: userProvider.groceryList.where((i) => !(i['checked'] ?? false)).length,
+                journalCount: userProvider.recipesCooked,
+                onPantryTap: () => Navigator.pushNamed(context, '/pantry'),
+                onGroceryTap: () => Navigator.pushNamed(context, '/grocery'),
+                onPlannerTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MealPlanningGate(child: MealPlanningScreen()))), // Assuming route or direct
+                onJournalTap: () => Navigator.pushNamed(context, '/journal'),
+              ),
+            ),
+
+            // 4. Mood Cooking Banner
+            SliverToBoxAdapter(
+              child: MoodCookingBanner(
+                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EmotionalCookingScreen())),
+              ),
+            ),
+
+            // 5. Today's Picks
+            SliverToBoxAdapter(
+              child: SectionHeader(
+                title: "Today's Picks",
+                subtitle: "You can cook these right now! 🍳",
+                onSeeAll: matches.isEmpty ? null : () {},
+              ),
+            ),
+
+            if (matches.isEmpty)
+               SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    "Add items to your pantry to see magic matches here!", 
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+               )
+            else
+               SliverToBoxAdapter(
+                child: SizedBox(
+                   height: 280, // Height for card + shadow
+                   child: ListView.builder(
+                     scrollDirection: Axis.horizontal,
+                     physics: const BouncingScrollPhysics(),
+                     padding: const EdgeInsets.only(right: 20, bottom: 20),
+                     itemCount: matches.length > 5 ? 5 : matches.length,
+                     itemBuilder: (context, index) {
+                       final recipe = matches[index].recipe;
+                       return RecipeCardRevamp(
+                         recipe: recipe,
+                         isFavorite: userProvider.isRecipeSaved(recipe.id),
+                         onFavorite: () => userProvider.toggleSaveRecipe(recipe.id),
+                         onTap: () => Navigator.push(
+                            context, 
+                            MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: recipe))
+                         ),
+                       );
+                     },
+                   ),
+                ),
+               ),
+               
+             const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+             // 6. Featured
+             SliverToBoxAdapter(
+               child: SectionHeader(
+                 title: "Popular Recipes",
+                 subtitle: "Trending in the Crave community",
+                 onSeeAll: () => Navigator.pushNamed(context, '/discovery'),
+               ),
              ),
-          ),
-          
-          const SliverToBoxAdapter(child: SizedBox(height: 100)), // Bottom Padding
-        ],
+             
+             SliverToBoxAdapter(
+                child: SizedBox(
+                   height: 280,
+                   child: ListView.builder(
+                     scrollDirection: Axis.horizontal,
+                     physics: const BouncingScrollPhysics(),
+                     padding: const EdgeInsets.only(right: 20, bottom: 20),
+                     itemCount: userProvider.allRecipes.length > 5 ? 5 : userProvider.allRecipes.length,
+                     itemBuilder: (context, index) {
+                       final recipe = userProvider.allRecipes[index];
+                       return RecipeCardRevamp(
+                         recipe: recipe,
+                         isFavorite: userProvider.isRecipeSaved(recipe.id),
+                         onFavorite: () => userProvider.toggleSaveRecipe(recipe.id),
+                         onTap: () => Navigator.push(
+                            context, 
+                            MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: recipe))
+                         ),
+                       );
+                     },
+                   ),
+                ),
+             ),
+
+             const SliverToBoxAdapter(child: SizedBox(height: 80)), // Bottom padding
+          ],
+        ),
       );
     });
   }
+}
 
-  Widget _buildEmptyMatchState(BuildContext context, UserProvider provider) {
-      if (provider.pantryList.isEmpty) {
-        return _buildEmptyStateCard(
-          context, 
-          "Your Fridge is Empty", 
-          "Add ingredients to get suggestions",
-          "Go to Pantry",
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen())),
-        );
-      }
-      
-      // If pantry has items but no matches, likely needs recipes
-      return _buildEmptyStateCard(
-        context,
-        "No Matching Recipes",
-        "We couldn't match your ingredients to any recipes.",
-        "See All Recipes", 
-        () {
-           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Try adding more varied ingredients!')));
-        },
-        secondaryAction: TextButton.icon(
-          onPressed: () {
-             _seedDummyRecipes(context);
-          }, 
-          icon: const Icon(LucideIcons.database),
-          label: const Text("Debug: Add Dummy Recipes"),
-        ),
-      );
-  }
-
-  Widget _buildEmptyStateCard(
-    BuildContext context, 
-    String title, 
-    String subtitle, 
-    String btnText, 
-    VoidCallback onBtnTap,
-    {Widget? secondaryAction}
-  ) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.slate.withOpacity(0.1)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LucideIcons.chefHat, size: 48, color: AppColors.primary.withOpacity(0.5)),
-            const SizedBox(height: 16),
-            Text(title, style: AppTextStyles.titleMedium),
-            const SizedBox(height: 4),
-            Text(subtitle, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-             ElevatedButton(
-                onPressed: onBtnTap,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent, 
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                ),
-                child: Text(btnText),
-             ),
-             if (secondaryAction != null) ...[
-               const SizedBox(height: 8),
-               secondaryAction,
-             ]
-          ],
-        ),
-      );
-  }
-
-  void _seedDummyRecipes(BuildContext context) {
-    // Quick seeder for MVP testing
-    final mockRecipes = [
-      {
-        'title': 'Tomato Omelette',
-        'ingredients': ['Eggs', 'Tomatoes', 'Salt', 'Pepper'],
-        'cookTime': 10,
-        'difficulty': 'Easy',
-        'source': 'manual'
-      },
-      {
-        'title': 'Cheese Sandwich',
-        'ingredients': ['Bread', 'Cheese', 'Butter'],
-        'cookTime': 5,
-        'difficulty': 'Easy',
-        'source': 'manual'
-      },
-      {
-        'title': 'Pancakes',
-        'ingredients': ['Milk', 'Flour', 'Eggs', 'Sugar'],
-        'cookTime': 20,
-        'difficulty': 'Medium',
-        'source': 'manual'
-      }
-    ];
-
-    int added = 0;
-    for (var r in mockRecipes) {
-       FirestoreService().saveRecipe(r);
-       added++;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added $added recipes! Restart app to sync.')));
-  }
-
-  Widget _buildFridgeItem(String name, String quantity) {
-    return Container(
-      width: 100,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-         border: Border.all(color: AppColors.slate.withOpacity(0.1)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-             padding: const EdgeInsets.all(8),
-             decoration: const BoxDecoration(
-               color: AppColors.wash,
-               shape: BoxShape.circle,
-             ),
-             child: const Icon(LucideIcons.carrot, color: AppColors.warmPeach, size: 20),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              name, 
-              style: AppTextStyles.labelMedium,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          Text('$quantity items', style: AppTextStyles.bodySmall),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddFridgeItem(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PantryScreen())),
-      child: Container(
-        width: 80,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: AppColors.freshMint.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.freshMint.withOpacity(0.3)),
-        ),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-             Icon(LucideIcons.plus, color: AppColors.freshMint),
-             SizedBox(height: 4),
-             Text("Add", style: TextStyle(color: AppColors.freshMint, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
+// Helper wrapper if needed, but normally MealPlanningScreen is guarded internally or by route
+class MealPlanningGate extends StatelessWidget { 
+  final Widget child;
+  const MealPlanningGate({super.key, required this.child});
+  @override 
+  Widget build(BuildContext context) => child; 
 }

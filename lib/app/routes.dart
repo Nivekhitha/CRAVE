@@ -17,6 +17,9 @@ import '../screens/pantry/pantry_screen.dart';
 import '../screens/grocery/grocery_screen.dart';
 import '../screens/recipe_detail/recipe_detail_screen.dart';
 import '../screens/add_recipe/add_recipe_screen.dart';
+import '../screens/add_recipe/cookbook_upload_screen.dart';
+import '../screens/add_recipe/add_recipe_options_screen.dart';
+import '../screens/favorites/favorites_screen.dart';
 import '../screens/paywall/paywall_screen.dart';
 import '../models/recipe.dart';
 
@@ -45,6 +48,9 @@ class AppRoutes {
   static const String grocery = '/grocery';
   static const String recipeDetail = '/recipe';
   static const String addRecipe = '/add-recipe';
+  static const String cookbookUpload = '/add-recipe/cookbook';
+  static const String addRecipeOptions = '/add-recipe/options';
+  static const String favorites = '/favorites';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -89,6 +95,12 @@ class AppRoutes {
         return _createSlideRoute(const GroceryScreen());
       case addRecipe:
         return _createSlideRoute(const AddRecipeScreen());
+      case cookbookUpload:
+        return _createSlideRoute(const CookbookUploadScreen());
+      case addRecipeOptions:
+        return _createSlideRoute(const AddRecipeOptionsScreen());
+      case favorites:
+        return _createSlideRoute(const FavoritesScreen());
 
       // Recipe detail with arguments
       case recipeDetail:

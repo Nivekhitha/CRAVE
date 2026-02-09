@@ -13,6 +13,7 @@ import 'services/nutrition_service.dart';
 import 'services/user_stats_service.dart';
 import 'services/extraction_cache_service.dart';
 import 'services/recipe_extraction_service.dart';
+import 'services/dietitian_service.dart';
 import 'app/app.dart';
 import 'providers/user_provider.dart';
 import 'firebase_options.dart';
@@ -88,6 +89,7 @@ Future<void> main() async {
         // Data services
         ChangeNotifierProvider(create: (_) => JournalService()),
         ChangeNotifierProvider(create: (_) => MealPlanService()),
+        ChangeNotifierProvider(create: (_) => DietitianService()),
         
         // Nutrition service depends on journal and meal plan services
         ChangeNotifierProxyProvider2<JournalService, MealPlanService, NutritionService>(

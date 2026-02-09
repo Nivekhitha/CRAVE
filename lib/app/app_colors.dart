@@ -1,63 +1,61 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // New User Palette
-  static const Color frostedBlue = Color(0xFF8DE4FF);
-  static const Color bubblegumPink = Color(0xFFF7567C);
-  static const Color amberGlow = Color(0xFFFF9F1C);
-  static const Color chartreuse = Color(0xFFBCED09);
-  static const Color purpleX11 = Color(0xFF8447FF);
-
-  // Backgrounds
-  static const Color creamWhite = Color(0xFFFAFAFA);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color wash = Color(0xFFF5F6FA);
+  // --- CHEF'S TABLE PALETTE (Premium Dark) ---
   
-  // Text
-  static const Color charcoal = Color(0xFF2D3436);
-  static const Color slate = Color(0xFF636E72);
+  // Primary
+  static const Color charcoal = Color(0xFF121212); // Deep Background
+  static const Color flameAmber = Color(0xFFFF6B00); // Primary Action (Fire/Cooking)
+  static const Color searGold = Color(0xFFFFD166); // Accents/Ratings
 
-  // Semantic mappings
-  static const Color freshMint = frostedBlue; // Mapping old name to new color for safety
-  static const Color softLavender = purpleX11;
-  static const Color warmPeach = bubblegumPink;
+  // Functional
+  static const Color surface = Color(0xFF1E1E1E); // Card Backgrounds
+  static const Color surfaceLight = Color(0xFF2C2C2C); // lighter surface for layers
+  static const Color textPrimary = Color(0xFFFAFAFA); // High Emphasis
+  static const Color textSecondary = Color(0xFFA0A0A0); // Medium Emphasis
+  static const Color divider = Color(0xFF333333);
+
+  // Status
+  static const Color success = Color(0xFF00C853); // Fresh Basil Green
+  static const Color error = Color(0xFFCF6679); // Muted Red
+  static const Color warning = searGold;
   
-  static const Color primary = frostedBlue;
-  static const Color secondary = purpleX11;
-  static const Color accent = bubblegumPink;
-  static const Color warn = amberGlow;
-  static const Color success = chartreuse;
-
-  static const Color error = Color(0xFFFF6B6B);
-
+  // Legacy Mapping (For backwards compatibility during refactor)
+  static const Color primary = flameAmber;
+  static const Color secondary = searGold;
+  static const Color accent = flameAmber;
+  static const Color background = charcoal;
+  static const Color onPrimary = Colors.white; // Text on primary button
+  static const Color onSurface = textPrimary;
+  
+  // Old Palette Mappings (Deprecated but kept to prevent breakages)
+  static const Color freshMint = flameAmber; 
+  static const Color softLavender = surfaceLight;
+  static const Color warmPeach = searGold;
+  static const Color creamWhite = charcoal; // Map light bg to dark
+  static const Color frostedBlue = surfaceLight;
+  static const Color purpleX11 = searGold;
+  static const Color slate = textSecondary;
+  static const Color amberGlow = flameAmber;
+  static const Color chartreuse = success;
+  
   // Gradients
   static const LinearGradient magicHour = LinearGradient(
-    colors: [bubblegumPink, amberGlow],
+    colors: [flameAmber, Color(0xFFFF8E33)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient freshStart = LinearGradient(
-    colors: [frostedBlue, purpleX11],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+  static const LinearGradient premiumDark = LinearGradient(
+    colors: [charcoal, Color(0xFF1A1A1A)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
 
-  static const LinearGradient goldenHour = LinearGradient(
-    colors: [amberGlow, chartreuse],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  // Legacy mappings
-  static const Color primaryDark = Color(0xFF3AAFA9); 
-  static const Color primaryLight = frostedBlue; 
-  static const Color background = creamWhite;
-  static const Color textPrimary = charcoal;
-  static const Color textSecondary = slate;
-  static const Color onPrimary = charcoal; // Light blue needs dark text
-  static const Color onSecondary = surface;
-  static const Color onSurface = charcoal;
-  static const Color onBackground = charcoal;
-  static const Color onError = surface;
+  // --- LEGACY COMPATIBILITY (Restored) ---
+  static const Color primaryLight = flameAmber; // Map to new primary
+  static const Color wash = surfaceLight;       // Map to new surface
+  
+  static const LinearGradient freshStart = magicHour; // Map to new gradient
+  static const LinearGradient goldenHour = magicHour; // Map to new gradient
 }

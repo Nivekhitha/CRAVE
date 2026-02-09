@@ -56,6 +56,7 @@ class CookingSessionService extends ChangeNotifier {
       await _tts.setSpeechRate(0.5); // Slightly slower for cooking
       await _tts.setVolume(0.8);
       await _tts.setPitch(1.0);
+      await _tts.awaitSpeakCompletion(true); // Wait for speech to finish
       
       debugPrint('✅ TTS initialized');
     } catch (e) {

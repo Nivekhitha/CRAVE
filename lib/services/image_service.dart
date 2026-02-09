@@ -69,19 +69,8 @@ class ImageService {
   String? getOptimizedImageUrl(String? originalUrl, ImageSize size) {
     if (originalUrl == null) return null;
 
-    if (originalUrl.contains('loremflickr.com')) {
-      final dimensions = _getDimensionsForSize(size);
-      return originalUrl.replaceAll(
-        RegExp(r'/\d+/\d+/'),
-        '/${dimensions.width}/${dimensions.height}/',
-      );
-    } else if (originalUrl.contains('source.unsplash.com')) {
-      final dimensions = _getDimensionsForSize(size);
-      return originalUrl.replaceAll(
-        RegExp(r'/\d+x\d+/'),
-        '/${dimensions.width}x${dimensions.height}/',
-      );
-    }
+    // Generic optimization not reliable for third parties, return original
+    // unless we implement specific providers
     
     return originalUrl;
   }
@@ -147,21 +136,14 @@ class ImageService {
     }
   }
 
-  /// Get Unsplash image URL based on recipe title
+  /// Get deterministic AI image URL using Pollinations.ai
   String _getUnsplashImageUrl(String recipeTitle, [String? recipeId]) {
-    // Clean and format recipe title for search
-    final searchTerm = recipeTitle
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
-        .replaceAll(' ', ',');
+    // Clean title for prompt
+    final prompt = recipeTitle.trim();
+    final encodedPrompt = Uri.encodeComponent('$prompt food photography high quality delicious');
     
-    // Use Unsplash Source API for higher quality food images
-    // Format: https://source.unsplash.com/800x600/?food,pasta
-    // Use recipeId hash as seed for consistent images
-    final seed = recipeId != null ? recipeId.hashCode.abs() : DateTime.now().millisecondsSinceEpoch;
-    
-    // Unsplash Source provides high-quality, curated food photography
-    return 'https://source.unsplash.com/800x600/?food,$searchTerm&sig=$seed';
+    // Pollinations.ai is free and effective for this
+    return 'https://image.pollinations.ai/prompt/$encodedPrompt?width=800&height=600&nologo=true&seed=${recipeId.hashCode}';
   }
 
   /// Generate placeholder image URL

@@ -4,6 +4,8 @@ import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../services/premium_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/journal_service.dart';
+import '../../providers/user_provider.dart';
 import '../../widgets/premium/paywall_view.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -188,71 +190,75 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Your Cooking Journey',
-            style: AppTextStyles.titleMedium.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 20),
-          
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Consumer2<JournalService, UserProvider>(
+        builder: (context, journalService, userProvider, child) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatCard(
-                '🔥',
-                '7',
-                'Day Streak',
-                AppColors.primary,
+              Text(
+                'Your Cooking Journey',
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              _buildStatCard(
-                '🍳',
-                '42',
-                'Recipes Cooked',
-                Colors.orange,
+              const SizedBox(height: 20),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildStatCard(
+                    '🔥',
+                    journalService.currentStreak.toDouble(),
+                    'Day Streak',
+                    AppColors.primary,
+                  ),
+                  _buildStatCard(
+                    '🍳',
+                    journalService.totalRecipesCooked.toDouble(),
+                    'Recipes Cooked',
+                    Colors.orange,
+                  ),
+                  _buildStatCard(
+                    '📚',
+                    userProvider.savedRecipeIds.length.toDouble(),
+                    'Recipes Saved',
+                    Colors.green,
+                  ),
+                ],
               ),
-              _buildStatCard(
-                '📚',
-                '128',
-                'Recipes Saved',
-                Colors.green,
+              const SizedBox(height: 20),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildStatCard(
+                    '📝',
+                    journalService.totalMealsLogged.toDouble(),
+                    'Meals Logged',
+                    Colors.blue,
+                  ),
+                  _buildStatCard(
+                    '🛒',
+                    userProvider.groceryList.length.toDouble(),
+                    'Grocery Items', // Changed "Lists Created" to "Grocery Items" as list objects aren't tracked, just items
+                    Colors.purple,
+                  ),
+                  _buildStatCard(
+                    '⭐',
+                    4.8, // Ratings are still mock as there is no rating system yet
+                    'Avg Rating',
+                    Colors.amber,
+                  ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 20),
-          
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatCard(
-                '📝',
-                '15',
-                'Meals Logged',
-                Colors.blue,
-              ),
-              _buildStatCard(
-                '🛒',
-                '8',
-                'Lists Created',
-                Colors.purple,
-              ),
-              _buildStatCard(
-                '⭐',
-                '4.8',
-                'Avg Rating',
-                Colors.amber,
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildStatCard(String emoji, String value, String label, Color color) {
+  Widget _buildStatCard(String emoji, double value, String label, Color color) {
     return Column(
       children: [
         Text(
@@ -260,12 +266,28 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: const TextStyle(fontSize: 24),
         ),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: AppTextStyles.titleLarge.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: value),
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeOut,
+          builder: (context, animatedValue, child) {
+            // Check if value is integer-likely (e.g. 5.0) to hide decimals, 
+            // except for rating (which might be 4.8)
+            String textValue;
+            if (value % 1 == 0) {
+              textValue = animatedValue.toInt().toString();
+            } else {
+              textValue = animatedValue.toStringAsFixed(1);
+            }
+            
+            return Text(
+              textValue,
+              style: AppTextStyles.titleLarge.copyWith(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            );
+          },
         ),
         Text(
           label,

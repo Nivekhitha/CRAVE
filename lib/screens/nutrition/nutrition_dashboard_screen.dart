@@ -7,7 +7,9 @@ import '../../app/app_text_styles.dart';
 import '../../services/journal_service.dart';
 import '../../services/nutrition_service.dart';
 import '../../services/nutrition_export_service.dart';
+import '../../services/nutrition_export_service.dart';
 import '../../widgets/premium/premium_gate.dart';
+import 'dietitian_chat_screen.dart';
 
 class NutritionDashboardScreen extends StatefulWidget {
   const NutritionDashboardScreen({super.key});
@@ -90,10 +92,26 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
                   const SizedBox(height: 32),
                   _buildWeeklyTrends(),
                   const SizedBox(height: 32),
+                  const SizedBox(height: 32),
                   _buildNutritionInsights(),
                 ],
               ),
             ),
+          ),
+        ),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DietitianChatScreen()),
+              );
+            },
+            backgroundColor: AppColors.primary,
+            icon: const Icon(Icons.psychology, color: Colors.white),
+            label: const Text('Ask AI Dietitian',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ),
       ),

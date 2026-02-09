@@ -7,7 +7,10 @@ import '../models/extraction_result.dart';
 import '../utils/content_hasher.dart';
 import 'extraction_cache_service.dart';
 import 'extraction_retry_service.dart';
+import 'extraction_cache_service.dart';
+import 'extraction_retry_service.dart';
 import 'recipe_ai_service.dart';
+import 'api_throttle_service.dart'; // Import
 
 /// Robust Recipe Extraction Service with Multi-Layer Caching and Retry Logic
 /// Cache hierarchy: Hive (local) -> Firestore (cloud) -> Fresh AI extraction
@@ -201,6 +204,9 @@ class RecipeExtractionService {
       onProgress?.call('Analyzing section ${i + 1} of ${chunks.length}...');
       
       try {
+        // Throttle AI calls to prevent rate limits
+        await ApiThrottleService.throttle('gemini_extraction');
+
         final recipes = await _aiService.analyzeText(chunk).timeout(
           const Duration(seconds: 60),
           onTimeout: () {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
+import '../../app/routes.dart';
 import '../../services/premium_service.dart';
 import '../home/home_screen.dart';
 import '../discovery/discovery_screen.dart';
@@ -417,19 +418,13 @@ class _AddActionModal extends StatelessWidget {
   }
 
   void _navigateToUploadRecipe(BuildContext context) {
-    Navigator.pop(context);
-    // TODO: Navigate to upload recipe screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Upload Recipe - Coming Soon!')),
-    );
+    Navigator.pop(context); // Close modal
+    Navigator.pushNamed(context, AppRoutes.addRecipeOptions);
   }
 
   void _navigateToManualRecipe(BuildContext context) {
-    Navigator.pop(context);
-    // TODO: Navigate to manual recipe creation
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Manual Recipe - Coming Soon!')),
-    );
+    Navigator.pop(context); // Close modal
+    Navigator.pushNamed(context, AppRoutes.addRecipe);
   }
 
   void _navigateToUpdateFridge(BuildContext context) {

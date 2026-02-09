@@ -9,9 +9,9 @@ class CraveApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crave',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.lightTheme, // Force light theme even in dark mode
-      themeMode: ThemeMode.light, // Always use light theme
+      theme: AppTheme.darkTheme,
+      darkTheme: AppTheme.darkTheme, 
+      themeMode: ThemeMode.dark, // Enforce Dark Chef's Table theme
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.generateRoute,
     );

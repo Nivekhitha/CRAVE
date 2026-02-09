@@ -1,73 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For Status Bar control
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
+  static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.dark,
       
       // Color Scheme
       colorScheme: const ColorScheme(
-        brightness: Brightness.light,
-        primary: AppColors.freshMint,
-        onPrimary: AppColors.surface,
-        secondary: AppColors.softLavender,
-        onSecondary: AppColors.surface,
-        tertiary: AppColors.warmPeach,
-        onTertiary: AppColors.charcoal,
+        brightness: Brightness.dark,
+        primary: AppColors.flameAmber,
+        onPrimary: Colors.white,
+        secondary: AppColors.searGold,
+        onSecondary: Colors.black,
+        tertiary: AppColors.success,
+        onTertiary: Colors.black,
         error: AppColors.error,
-        onError: AppColors.surface,
-        surface: AppColors.creamWhite, // Use cream white as main background
-        onSurface: AppColors.charcoal,
+        onError: Colors.black,
+        surface: AppColors.surface,
+        onSurface: AppColors.textPrimary,
+        background: AppColors.charcoal,
+        onBackground: AppColors.textPrimary,
       ),
       
-      scaffoldBackgroundColor: AppColors.creamWhite,
-
-      // Typography
-      textTheme: TextTheme(
-        displayLarge: AppTextStyles.displayLarge,
-        displayMedium: AppTextStyles.displayMedium,
-        displaySmall: AppTextStyles.displaySmall,
-        headlineLarge: AppTextStyles.headlineLarge,
-        headlineMedium: AppTextStyles.headlineMedium,
-        headlineSmall: AppTextStyles.headlineSmall,
-        titleLarge: AppTextStyles.titleLarge,
-        titleMedium: AppTextStyles.titleMedium,
-        titleSmall: AppTextStyles.titleSmall,
-        bodyLarge: AppTextStyles.bodyLarge,
-        bodyMedium: AppTextStyles.bodyMedium,
-        bodySmall: AppTextStyles.bodySmall,
-        labelLarge: AppTextStyles.labelLarge,
-        labelMedium: AppTextStyles.labelMedium,
-        labelSmall: AppTextStyles.labelSmall,
-      ),
-
-      // Component Themes
+      scaffoldBackgroundColor: AppColors.charcoal,
       
-      // Card Theme (Glass/Soft)
-      // Card Theme (Glass/Soft)
-      /* 
-      // Temporarily disabled due to CardTheme/CardThemeData mismatch on some Flutter versions
-      cardTheme: CardTheme(
-        color: AppColors.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        margin: EdgeInsets.zero,
-      ),
-      */
-
       // App Bar
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: 0,
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        titleTextStyle: TextStyle(
+          color: AppColors.textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Playfair Display', // Serif header if available, else defaults
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+      ),
+      
+      // Buttons
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.flameAmber,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shadowColor: AppColors.flameAmber.withOpacity(0.4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        ),
+      ),
+      
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.searGold,
+          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.surfaceLight),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        ),
       ),
 
-      // Input Decoration (Rounded)
+      // Input Decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
@@ -75,32 +83,41 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        prefixIconColor: AppColors.slate,
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.slate),
-      ),
-
-      // Buttons
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.freshMint,
-          foregroundColor: AppColors.surface,
-          elevation: 2,
-          shadowColor: AppColors.freshMint.withOpacity(0.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          textStyle: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.flameAmber, width: 2),
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        prefixIconColor: AppColors.textSecondary,
+        hintStyle: const TextStyle(color: AppColors.textSecondary),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
       ),
       
-      // FAB
+      // Card Theme
+      cardTheme: CardThemeData(
+        color: AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.surfaceLight, width: 1), // Subtle border
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      
+      // Floating Action Button
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.warmPeach,
-        foregroundColor: AppColors.charcoal,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.flameAmber,
+        foregroundColor: Colors.white,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      
+      // Typography overrides if needed
+      textTheme: TextTheme(
+        displayLarge: AppTextStyles.displayLarge.copyWith(color: AppColors.textPrimary),
+        displayMedium: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary),
+        bodyLarge: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
+        bodyMedium: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
       ),
     );
   }

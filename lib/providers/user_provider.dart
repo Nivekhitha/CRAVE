@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/migration_service.dart';
+import '../services/the_meal_db_service.dart';
+import '../services/recipe_cache_service.dart'; // Import
 import '../utils/debouncer.dart';
 import '../utils/exceptions.dart';
 
@@ -15,6 +17,8 @@ class UserProvider extends ChangeNotifier {
   final FirestoreService _firestore = FirestoreService();
   final MigrationService _migration = MigrationService();
   final RecipeMatchingService _matcher = RecipeMatchingService();
+  final TheMealDBService _mealDb = TheMealDBService();
+  final RecipeCacheService _recipeCache = RecipeCacheService(); // New Cache Service
   final ActionThrottler _actionThrottler = ActionThrottler(cooldownMs: 500);
 
   // State Variables
@@ -27,6 +31,7 @@ class UserProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _groceryList = [];
   List<Map<String, dynamic>> _pantryList = [];
   List<Recipe> _allRecipes = [];
+  List<Recipe> _remoteRecipes = []; // Remote + Cached recipes
   List<RecipeMatch> _recipeMatches = [];
   List<String> _savedRecipeIds = []; // Track saved recipe IDs
   bool _suggestionsLoading = false;
@@ -51,6 +56,7 @@ class UserProvider extends ChangeNotifier {
   List<String> get savedRecipeIds => _savedRecipeIds;
   List<Recipe> get savedRecipes => _allRecipes.where((r) => _savedRecipeIds.contains(r.id)).toList();
   bool get suggestionsLoading => _suggestionsLoading;
+  List<Recipe> get allRecipes => _allRecipes;
 
   UserProvider() {
     _init();
@@ -70,7 +76,14 @@ class UserProvider extends ChangeNotifier {
       }
       notifyListeners();
     });
+    
+    // Load cached recipes immediately on startup (offline support)
+    _loadCachedRemoteRecipes();
+  }
 
+  Future<void> _loadCachedRemoteRecipes() async {
+    _remoteRecipes = await _recipeCache.getCachedRecipes();
+    notifyListeners();
   }
 
   Future<void> _fetchUserProfile() async {
@@ -99,6 +112,11 @@ class UserProvider extends ChangeNotifier {
         return data;
       }).toList();
       _recalculateMatches(); // Recalculate when pantry changes
+      // Trigger remote fetch if local matches are low or empty, but debounce it in real app
+      // For now, let's just trigger it.
+      if (_pantryList.isNotEmpty) {
+         _fetchRemoteRecipes(); 
+      }
       notifyListeners();
     }, onError: (e) => debugPrint("❌ Pantry Stream Error: $e"));
 
@@ -125,18 +143,55 @@ class UserProvider extends ChangeNotifier {
       debugPrint("🍲 Fetched ${_allRecipes.length} recipes from Firestore");
       notifyListeners();
     }, onError: (e) => debugPrint("❌ Recipe Stream Error: $e"));
+  }
 
 
+  Future<void> _fetchRemoteRecipes() async {
+    if (_pantryList.isEmpty) return;
+
+    _suggestionsLoading = true;
+    notifyListeners();
+
+    try {
+      // Pick top 3 ingredients (e.g., proteins or just first 3)
+      final ingredients = _pantryList.take(3).map((item) => item['name'].toString()).toList();
+      
+      final List<Recipe> fetched = [];
+      for (final ing in ingredients) {
+        final results = await _mealDb.getRecipesByIngredient(ing);
+        fetched.addAll(results);
+      }
+
+      // Remove duplicates
+      final ids = <String>{};
+      _remoteRecipes = [];
+      for (final r in fetched) {
+        if (ids.add(r.id)) {
+          _remoteRecipes.add(r);
+        }
+      }
+      
+      // Cache the newly fetched recipes
+      await _recipeCache.cacheRemoteRecipes(_remoteRecipes);
+
+      _recalculateMatches(); // Re-run matching with new data
+    } catch (e) {
+      debugPrint("❌ Error fetching remote recipes: $e");
+    } finally {
+      _suggestionsLoading = false;
+      notifyListeners();
+    }
   }
 
   void _recalculateMatches() {
-    if (_allRecipes.isEmpty || _pantryList.isEmpty) {
+    final combinedRecipes = [..._allRecipes, ..._remoteRecipes];
+    
+    if (combinedRecipes.isEmpty || _pantryList.isEmpty) {
       _recipeMatches = [];
       return;
     }
     // Run matching algorithm
-    _recipeMatches = _matcher.getMatches(_allRecipes, _pantryList);
-    // debugPrint("🧠 Recalculated Matches: ${_recipeMatches.length} matches found.");
+    _recipeMatches = _matcher.getMatches(combinedRecipes, _pantryList);
   }
 
   void _clearData() {
@@ -284,6 +339,12 @@ class UserProvider extends ChangeNotifier {
     // If FirestoreService doesn't have it, we'll need to add it there too, but let's assume we can at least define it here.
     // Actually, looking at the error `deleteGroceryItemByValue` was called.
     // Let's implement that first to match legacy calls, but preferably move to ID.
+    try {
+        await _firestore.deleteGroceryItem(id);
+    } catch (e) {
+        debugPrint("❌ Error deleting grocery item: $e");
+        // Fallback or ignore if not implemented in service yet
+    }
   }
 
   // Legacy support or if UI uses object
@@ -404,6 +465,4 @@ class UserProvider extends ChangeNotifier {
       rethrow;
     }
   }
-
-
 }
