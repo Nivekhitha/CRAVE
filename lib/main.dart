@@ -16,6 +16,7 @@ import 'services/recipe_extraction_service.dart';
 import 'services/dietitian_service.dart';
 import 'app/app.dart';
 import 'providers/user_provider.dart';
+import 'providers/theme_provider.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -71,6 +72,9 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        // Theme provider
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        
         // Core providers
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider.value(value: premiumService),

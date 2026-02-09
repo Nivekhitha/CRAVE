@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../app/routes.dart';
+import '../../providers/theme_provider.dart';
 
 class HomeHeaderRevamp extends StatelessWidget {
   final String userName;
@@ -61,6 +63,17 @@ class HomeHeaderRevamp extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Theme Toggle Button
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, child) {
+                  return _buildIconBtn(
+                    context,
+                    themeProvider.isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
+                    () => themeProvider.toggleTheme(),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
               _buildIconBtn(
                 context, 
                 Icons.favorite_border, 
