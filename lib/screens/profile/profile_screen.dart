@@ -26,7 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.build(context);
     
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -106,6 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     'John Doe', // TODO: Get from user provider
                     style: AppTextStyles.headlineMedium.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -146,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         Text(
                           'Free Account',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -156,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   Text(
                     'Cooking enthusiast since 2024',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -167,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               onPressed: _showProfileOptions,
               icon: const Icon(Icons.more_vert),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.surface,
+                backgroundColor: Theme.of(context).cardColor,
               ),
             ),
           ],
@@ -180,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -199,6 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 'Your Cooking Journey',
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 20),
@@ -292,7 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
         ),

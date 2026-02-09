@@ -122,7 +122,7 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -151,7 +151,7 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
             label,
             textAlign: TextAlign.center,
             style: AppTextStyles.labelMedium.copyWith(
-              color: isSelected ? Colors.white : AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
@@ -171,7 +171,7 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -356,7 +356,7 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -449,7 +449,7 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: vitamin.color.withOpacity(0.2),
@@ -650,7 +650,7 @@ class _NutritionDashboardScreenState extends State<NutritionDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

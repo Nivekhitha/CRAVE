@@ -52,7 +52,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         elevation: 0,
         titleTextStyle: AppTextStyles.titleLarge,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -75,7 +75,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   height: 200,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+        fillColor: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
                   ),

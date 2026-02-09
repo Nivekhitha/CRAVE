@@ -161,7 +161,7 @@ class _EmotionalCookingScreenState extends State<EmotionalCookingScreen> {
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isSelected ? mood['color'] : AppColors.surface,
+                                  color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(20),
                             border: isSelected ? null : Border.all(color: Colors.grey.shade200),
                             boxShadow: [

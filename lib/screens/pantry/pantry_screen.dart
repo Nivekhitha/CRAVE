@@ -49,10 +49,10 @@ class _PantryScreenState extends State<PantryScreen> {
               (item) => (item['name'] ?? '').toString().toLowerCase() == query);
 
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Your Fridge'),
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           centerTitle: true,
           titleTextStyle: AppTextStyles.titleLarge,
@@ -87,7 +87,7 @@ class _PantryScreenState extends State<PantryScreen> {
                         )
                       : null,
                   filled: true,
-                  fillColor: AppColors.surface,
+                  fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -147,7 +147,7 @@ class _PantryScreenState extends State<PantryScreen> {
                     child: Text('QUICK ADD',
                         style: AppTextStyles.labelSmall.copyWith(
                             letterSpacing: 1.2,
-                            color: AppColors.textSecondary)),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   ),
                   const SizedBox(height: 8),
                   SingleChildScrollView(
@@ -228,7 +228,7 @@ class _PantryScreenState extends State<PantryScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text('CURRENT INVENTORY',
                     style: AppTextStyles.labelSmall.copyWith(
-                        letterSpacing: 1.2, color: AppColors.textSecondary)),
+                        letterSpacing: 1.2, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
             ),
             const SizedBox(height: 8),
@@ -245,7 +245,7 @@ class _PantryScreenState extends State<PantryScreen> {
                           const SizedBox(height: 16),
                           Text('No ingredients found',
                               style: AppTextStyles.bodyMedium
-                                  .copyWith(color: AppColors.textSecondary)),
+                                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                           if (showAdd)
                             TextButton(
                               onPressed: () =>
@@ -304,11 +304,11 @@ class _PantryScreenState extends State<PantryScreen> {
                             ),
                             title: Text(name,
                                 style: AppTextStyles.bodyLarge
-                                    .copyWith(color: AppColors.textPrimary)),
+                                    .copyWith(color: Theme.of(context).colorScheme.onSurface)),
                             subtitle: Text(
                               item['category'] ?? 'Other',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             trailing: Row(
@@ -341,7 +341,7 @@ class _PantryScreenState extends State<PantryScreen> {
                                           minWidth: 32,
                                           minHeight: 32,
                                         ),
-                                        color: AppColors.textSecondary,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       ),
                                       // Quantity display
                                       Container(

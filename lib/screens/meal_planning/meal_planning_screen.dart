@@ -141,7 +141,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
               width: 80,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.surface,
+          color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: isToday 
                     ? Border.all(color: AppColors.accent, width: 2)
@@ -153,7 +153,7 @@ class _MealPlanningScreenState extends State<MealPlanningScreen> {
                   Text(
                     DateFormat('E').format(date),
                     style: AppTextStyles.labelMedium.copyWith(
-                      color: isSelected ? AppColors.onPrimary : AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
                     ),
                   ),
                   const SizedBox(height: 4),

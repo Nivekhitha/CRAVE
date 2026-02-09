@@ -45,7 +45,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     super.build(context);
     
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
@@ -75,13 +75,14 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               'Discover',
               style: AppTextStyles.headlineLarge.copyWith(
                 fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Find new recipes and cooking inspiration',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -127,6 +128,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               'Featured Recipes',
               style: AppTextStyles.titleLarge.copyWith(
                 fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -285,7 +287,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+              color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: AppColors.primary.withOpacity(0.1),
@@ -345,7 +347,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                    color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(

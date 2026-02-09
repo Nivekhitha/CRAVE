@@ -191,7 +191,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
                       child: CircularProgressIndicator(
                         value: 1.0,
                         strokeWidth: 12,
-                        backgroundColor: AppColors.surface,
+        color: Theme.of(context).cardColor,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           AppColors.surface.withOpacity(0.3),
                         ),

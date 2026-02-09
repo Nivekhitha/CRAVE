@@ -318,7 +318,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       color: isCompleted
                                           ? AppColors.primary
                                               .withValues(alpha: 0.1)
-                                          : AppColors.surface,
+                                          : Theme.of(context).cardColor,
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: isCompleted
@@ -337,7 +337,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           decoration: BoxDecoration(
                                             color: isCompleted
                                                 ? AppColors.primary
-                                                : AppColors.surface,
+                                                : Theme.of(context).cardColor,
                                             shape: BoxShape.circle,
                                             border: Border.all(
                                               color: isCompleted
@@ -510,7 +510,7 @@ class _CircleButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(icon, color: AppColors.textPrimary, size: 20),
+        child: Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 20),
       ),
     );
   }

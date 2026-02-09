@@ -131,7 +131,7 @@ class _PaywallScreenState extends State<PaywallScreen>
           ),
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: AppColors.textSecondary),
+            icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -186,7 +186,7 @@ class _PaywallScreenState extends State<PaywallScreen>
         Text(
           'Unlock unlimited recipes, smart matching, and exclusive features to elevate your cooking game.',
           style: AppTextStyles.bodyLarge.copyWith(
-            color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
             height: 1.5,
           ),
           textAlign: TextAlign.center,
@@ -248,7 +248,7 @@ class _PaywallScreenState extends State<PaywallScreen>
                 Text(
                   feature.description,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -299,7 +299,7 @@ class _PaywallScreenState extends State<PaywallScreen>
         // Pricing options
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppColors.primary.withValues(alpha: 0.2),
@@ -424,7 +424,7 @@ class _PaywallScreenState extends State<PaywallScreen>
                   Text(
                     subtitle,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -489,7 +489,7 @@ class _PaywallScreenState extends State<PaywallScreen>
           child: Text(
             'Maybe Later',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -504,7 +504,7 @@ class _PaywallScreenState extends State<PaywallScreen>
               child: Text(
                 'Terms',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                   decoration: TextDecoration.underline,
                 ),
               ),
@@ -512,7 +512,7 @@ class _PaywallScreenState extends State<PaywallScreen>
             Text(
               ' • ',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             TextButton(
@@ -522,7 +522,7 @@ class _PaywallScreenState extends State<PaywallScreen>
               child: Text(
                 'Privacy',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                   decoration: TextDecoration.underline,
                 ),
               ),
@@ -530,7 +530,7 @@ class _PaywallScreenState extends State<PaywallScreen>
             Text(
               ' • ',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             TextButton(
@@ -558,7 +558,7 @@ class _PaywallScreenState extends State<PaywallScreen>
               child: Text(
                 'Restore',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                   decoration: TextDecoration.underline,
                 ),
               ),

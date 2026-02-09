@@ -122,7 +122,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: AppColors.surface,
+                  color: Theme.of(context).cardColor,
                       valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                       minHeight: 6,
                     ),

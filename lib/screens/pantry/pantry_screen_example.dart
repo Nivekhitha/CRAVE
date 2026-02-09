@@ -159,7 +159,7 @@ class _PantryScreenExampleState extends State<PantryScreenExample>
                         subtitle: Text(
                           item['category'] ?? 'Pantry',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         trailing: IconButton(
@@ -190,7 +190,7 @@ class _PantryScreenExampleState extends State<PantryScreenExample>
           Icon(
             Icons.kitchen_outlined,
             size: 80,
-            color: AppColors.textSecondary.withValues(alpha: 0.5),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(

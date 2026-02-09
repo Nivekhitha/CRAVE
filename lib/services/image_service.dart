@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../models/recipe.dart';
 import 'auth_service.dart';
+import 'unsplash_image_service.dart';
 
 class ImageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -44,11 +45,7 @@ class ImageService {
         return aiImageUrl;
       }
 
-      // 3. Get Unsplash image based on recipe title
-      final unsplashUrl = _getUnsplashImageUrl(recipe.title, recipe.id);
-      if (await _isValidImageUrl(unsplashUrl)) {
-        return unsplashUrl;
-      }
+
 
       // 4. Fallback (now returns null)
       return _getPlaceholderImageUrl(recipe);
@@ -119,12 +116,10 @@ class ImageService {
         return cachedUrl;
       }
 
-      // For MVP, we'll use a deterministic approach with Unsplash
-      // In production, you could integrate with DALL-E, Midjourney, or Stable Diffusion
-      final aiPrompt = _generateImagePrompt(recipe);
-      final generatedUrl = await _generateImageWithUnsplash(aiPrompt);
+      // Use Unsplash as the AI generation backend
+      final generatedUrl = await UnsplashImageService().getRecipeImage(recipe.title);
       
-      if (generatedUrl != null) {
+      if (generatedUrl.isNotEmpty) {
         await _cacheImageUrl(cacheKey, generatedUrl);
         return generatedUrl;
       }
@@ -136,15 +131,7 @@ class ImageService {
     }
   }
 
-  /// Get deterministic AI image URL using Pollinations.ai
-  String _getUnsplashImageUrl(String recipeTitle, [String? recipeId]) {
-    // Clean title for prompt
-    final prompt = recipeTitle.trim();
-    final encodedPrompt = Uri.encodeComponent('$prompt food photography high quality delicious');
-    
-    // Pollinations.ai is free and effective for this
-    return 'https://image.pollinations.ai/prompt/$encodedPrompt?width=800&height=600&nologo=true&seed=${recipeId.hashCode}';
-  }
+
 
   /// Generate placeholder image URL
   /// Returns null so SmartRecipeImage can show its gradient fallback
@@ -197,13 +184,7 @@ class ImageService {
     }
   }
 
-  /// Generate image prompt for AI generation
-  String _generateImagePrompt(Recipe recipe) {
-    final ingredients = recipe.ingredients.take(3).join(', ');
-    final style = recipe.tags?.contains('Healthy') == true ? 'fresh, vibrant' : 'appetizing, delicious';
-    
-    return 'A $style photo of ${recipe.title} made with $ingredients, professional food photography, well-lit, appetizing presentation';
-  }
+
 
   /// Generate cache key for image
   String _generateImageCacheKey(Recipe recipe) {
@@ -248,38 +229,7 @@ class ImageService {
     }
   }
 
-  /// Generate image using Unsplash with specific search terms
-  Future<String?> _generateImageWithUnsplash(String prompt) async {
-    try {
-      // Extract key terms from AI prompt
-      final keyTerms = _extractKeyTermsFromPrompt(prompt);
-      final searchQuery = keyTerms.join(',');
-      
-      // Use LoremFlickr with specific terms
-      final url = 'https://loremflickr.com/800/600/$searchQuery';
-      
-      if (await _isValidImageUrl(url)) {
-        return url;
-      }
-      
-      return null;
-    } catch (e) {
-      debugPrint('⚠️ Unsplash image generation failed: $e');
-      return null;
-    }
-  }
 
-  /// Extract key terms from AI prompt for image search
-  List<String> _extractKeyTermsFromPrompt(String prompt) {
-    final commonWords = {'a', 'an', 'the', 'of', 'with', 'made', 'photo', 'professional', 'well-lit'};
-    
-    return prompt
-        .toLowerCase()
-        .split(RegExp(r'[,\s]+'))
-        .where((word) => word.length > 2 && !commonWords.contains(word))
-        .take(5)
-        .toList();
-  }
 
   /// Get color code for category (for placeholders)
   String _getColorCodeForCategory(String category) {
