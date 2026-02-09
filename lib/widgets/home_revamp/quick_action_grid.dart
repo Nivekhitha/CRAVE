@@ -33,7 +33,7 @@ class QuickActionGrid extends StatelessWidget {
               _buildActionCard(
                 context,
                 icon: Icons.kitchen,
-                color: Colors.orange,
+                color: const Color(0xFFD84315), // Deep orange-red
                 label: 'Pantry',
                 value: '$pantryCount items',
                 onTap: onPantryTap,
@@ -42,7 +42,7 @@ class QuickActionGrid extends StatelessWidget {
               _buildActionCard(
                 context,
                 icon: Icons.shopping_cart,
-                color: Colors.green,
+                color: const Color(0xFF7BA47B), // Sage green (from palette)
                 label: 'Grocery',
                 value: '$groceryCount items',
                 onTap: onGroceryTap,
@@ -55,7 +55,7 @@ class QuickActionGrid extends StatelessWidget {
               _buildActionCard(
                 context,
                 icon: Icons.calendar_today,
-                color: Colors.purple,
+                color: const Color(0xFFD4654A), // Terracotta (from palette)
                 label: 'Planner',
                 value: 'Weekly',
                 onTap: onPlannerTap,
@@ -64,7 +64,7 @@ class QuickActionGrid extends StatelessWidget {
               _buildActionCard(
                 context,
                 icon: Icons.book,
-                color: AppColors.flameAmber,
+                color: const Color(0xFFC0392B), // Deep red
                 label: 'Journal',
                 value: '$journalCount cooked',
                 onTap: onJournalTap,
@@ -90,8 +90,13 @@ class QuickActionGrid extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -115,14 +120,14 @@ class QuickActionGrid extends StatelessWidget {
                 label,
                 style: AppTextStyles.labelMedium.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 11,
                 ),
               ),

@@ -15,11 +15,18 @@ class MoodCookingBanner extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: AppColors.magicHour, // Use our fancy gradient
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFD4654A), // Terracotta from palette
+              Color(0xFFC0392B), // Deep red
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppColors.flameAmber.withOpacity(0.3),
+              color: const Color(0xFFD4654A).withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),

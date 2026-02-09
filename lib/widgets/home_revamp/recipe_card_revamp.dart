@@ -25,8 +25,13 @@ class RecipeCardRevamp extends StatelessWidget {
         width: 240, // Fixed width for horizontal scrolling
         margin: const EdgeInsets.only(left: 20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -51,8 +56,13 @@ class RecipeCardRevamp extends StatelessWidget {
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         height: 160,
-                        color: AppColors.surfaceLight,
-                        child: const Center(child: Icon(Icons.image_not_supported, color: AppColors.textSecondary)),
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
+                        child: Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -71,7 +81,7 @@ class RecipeCardRevamp extends StatelessWidget {
                       ),
                       child: Icon(
                         isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavorite ? AppColors.error : Colors.white,
+                        color: isFavorite ? const Color(0xFFC0392B) : Colors.white,
                         size: 20,
                       ),
                     ),
@@ -90,7 +100,7 @@ class RecipeCardRevamp extends StatelessWidget {
                     recipe.title,
                     style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -99,16 +109,18 @@ class RecipeCardRevamp extends StatelessWidget {
                   // Subtitle (Ingredients count or cuisine)
                   Text(
                     '${recipe.ingredients.length} ingredients',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   
                   // Meta Row
                   Row(
                     children: [
-                      _buildMetaItem(Icons.access_time, '${recipe.totalTime ?? 30}m'),
+                      _buildMetaItem(context, Icons.access_time, '${recipe.totalTime ?? 30}m'),
                       const SizedBox(width: 12),
-                      _buildMetaItem(Icons.local_fire_department, '${(recipe.calories ?? 300).toInt()} cal'),
+                      _buildMetaItem(context, Icons.local_fire_department, '${(recipe.calories ?? 300).toInt()} cal'),
                     ],
                   ),
                 ],
@@ -120,14 +132,20 @@ class RecipeCardRevamp extends StatelessWidget {
     );
   }
 
-  Widget _buildMetaItem(IconData icon, String text) {
+  Widget _buildMetaItem(BuildContext context, IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppColors.textSecondary),
+        Icon(
+          icon,
+          size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 4),
         Text(
           text,
-          style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.labelSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
