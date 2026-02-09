@@ -19,7 +19,7 @@ class HomeHeaderRevamp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      color: AppColors.background, // Match screen background
+      color: Theme.of(context).scaffoldBackgroundColor, // Use theme background
       child: Row(
         children: [
           // Logo & Greeting
@@ -44,13 +44,15 @@ class HomeHeaderRevamp extends StatelessWidget {
               children: [
                 Text(
                   'Hello, $userName 👋',
-                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'CRAVE',
                   style: AppTextStyles.headlineMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 1.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -104,12 +106,12 @@ class HomeHeaderRevamp extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.surfaceLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: IconButton(
-        icon: Icon(icon, size: 20, color: AppColors.textPrimary),
+        icon: Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurface),
         onPressed: onTap,
         padding: EdgeInsets.zero,
       ),

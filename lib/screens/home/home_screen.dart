@@ -63,7 +63,7 @@ class _HomeView extends StatelessWidget {
       final avatarUrl = ImageService().getUserAvatarUrl(username); 
 
       return Scaffold( // Wrapped in scaffold to ensure bg color if used standalone
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
@@ -86,7 +86,7 @@ class _HomeView extends StatelessWidget {
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
