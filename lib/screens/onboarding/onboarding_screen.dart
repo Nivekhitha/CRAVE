@@ -51,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).cardColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -63,7 +63,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: _onGetStarted,
                   child: Text(
                     'Skip',
-                    style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               )
@@ -101,7 +103,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         width: index == _currentPage ? 24 : 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: index == _currentPage ? AppColors.primary : AppColors.primaryLight,
+                          color: index == _currentPage
+                              ? const Color(0xFFC0392B) // Deep red
+                              : const Color(0xFFC0392B).withOpacity(0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -113,8 +117,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ElevatedButton(
                       onPressed: _onGetStarted,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.onPrimary,
+                        backgroundColor: const Color(0xFFC0392B), // Deep red
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
@@ -122,7 +126,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       child: Text(
                         "Let's get started!",
-                        style: AppTextStyles.labelLarge.copyWith(color: AppColors.onPrimary),
+                        style: AppTextStyles.labelLarge.copyWith(color: Colors.white),
                       ),
                     )
                   else
@@ -131,8 +135,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: ElevatedButton.styleFrom(
                         shape: const CircleBorder(),
                         padding: const EdgeInsets.all(16),
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.onPrimary,
+                        backgroundColor: const Color(0xFFC0392B), // Deep red
+                        foregroundColor: Colors.white,
                       ),
                       child: const Icon(Icons.arrow_forward),
                     ),
@@ -200,12 +204,16 @@ class _OnboardingPage extends StatelessWidget {
               children: [
                 Text(
                   content.title,
-                  style: AppTextStyles.headlineLarge,
+                  style: AppTextStyles.headlineLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   content.description,
-                  style: AppTextStyles.bodyLarge,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

@@ -89,13 +89,19 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Create Account'),
+        title: Text(
+          'Create Account',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -111,7 +117,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 Text(
                   'Join Crave',
-                  style: AppTextStyles.headlineLarge,
+                  style: AppTextStyles.headlineLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -119,7 +127,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 Text(
                   'Create your account to start cooking',
-                  style: AppTextStyles.bodyLarge,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
 
@@ -246,8 +256,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleSignup,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
+                      backgroundColor: const Color(0xFFC0392B), // Deep red
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -260,9 +270,12 @@ class _SignupScreenState extends State<SignupScreen> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white),
                           )
-                        : Text('Create Account',
-                            style: AppTextStyles.labelLarge
-                                .copyWith(color: AppColors.onPrimary)),
+                        : Text(
+                            'Create Account',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
 
@@ -272,14 +285,18 @@ class _SignupScreenState extends State<SignupScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Already have an account? ",
-                        style: AppTextStyles.bodyMedium),
+                    Text(
+                      "Already have an account? ",
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Text(
                         'Log in',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.primary,
+                          color: const Color(0xFFC0392B), // Deep red
                           fontWeight: FontWeight.bold,
                         ),
                       ),

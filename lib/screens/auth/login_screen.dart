@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -73,22 +73,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 100,
                     width: 100,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: const Color(0xFFD4654A).withOpacity(0.1), // Terracotta
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.restaurant_menu, size: 60, color: AppColors.primary),
+                    child: const Icon(
+                      Icons.restaurant_menu,
+                      size: 60,
+                      color: Color(0xFFD4654A), // Terracotta
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
                 Text(
                   'Welcome Back',
-                  style: AppTextStyles.headlineLarge,
+                  style: AppTextStyles.headlineLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Login to continue cooking',
-                  style: AppTextStyles.bodyLarge,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
@@ -127,8 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
+                      backgroundColor: const Color(0xFFC0392B), // Deep red
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -143,13 +151,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account? ", style: AppTextStyles.bodyMedium),
+                    Text(
+                      "Don't have an account? ",
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
                       child: Text(
                         'Sign Up',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.primary,
+                          color: const Color(0xFFC0392B), // Deep red
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -206,7 +219,12 @@ class _LoginScreenState extends State<LoginScreen> {
                    }
                 }
               },
-              child: Text('Continue as Guest', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+              child: Text(
+                'Continue as Guest',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
           ],
         ),
