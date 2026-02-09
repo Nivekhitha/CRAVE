@@ -99,6 +99,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
           controller: _searchController,
           onChanged: _handleSearch,
           onSubmitted: _handleSearchSubmit,
+          hintText: 'What are you craving for?',
         ),
       ),
     );
