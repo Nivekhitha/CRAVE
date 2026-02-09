@@ -15,11 +15,19 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _loadThemeMode() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final isDark = prefs.getBool(_themeKey) ?? false;
-      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      // Check if theme has been set before
+      if (prefs.containsKey(_themeKey)) {
+        final isDark = prefs.getBool(_themeKey) ?? false;
+        _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      } else {
+        // First time - default to light mode
+        _themeMode = ThemeMode.light;
+        await prefs.setBool(_themeKey, false);
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading theme: $e');
+      _themeMode = ThemeMode.light; // Default to light on error
     }
   }
   

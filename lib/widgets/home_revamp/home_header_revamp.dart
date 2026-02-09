@@ -70,7 +70,7 @@ class HomeHeaderRevamp extends StatelessWidget {
                 builder: (context, themeProvider, child) {
                   return _buildIconBtn(
                     context,
-                    themeProvider.isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
+                    themeProvider.isDarkMode ? Icons.nightlight_round : Icons.wb_sunny,
                     () => themeProvider.toggleTheme(),
                   );
                 },
