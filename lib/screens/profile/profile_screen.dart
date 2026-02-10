@@ -116,6 +116,36 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                   ),
+                
+                // Edit button overlay on avatar
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _editProfile,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(width: 20),
@@ -124,12 +154,28 @@ class _ProfileScreenState extends State<ProfileScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _username,
-                    style: AppTextStyles.headlineMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _username,
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      // Edit button next to name
+                      IconButton(
+                        onPressed: _editProfile,
+                        icon: const Icon(Icons.edit_outlined),
+                        iconSize: 20,
+                        color: AppColors.accent,
+                        tooltip: 'Edit Profile',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -176,6 +222,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ],
                   ),
                   const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.flag_outlined,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _country,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     'Cooking enthusiast since 2024',
                     style: AppTextStyles.bodySmall.copyWith(
@@ -183,14 +246,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
                 ],
-              ),
-            ),
-            
-            IconButton(
-              onPressed: _showProfileOptions,
-              icon: const Icon(Icons.more_vert),
-              style: IconButton.styleFrom(
-                backgroundColor: Theme.of(context).cardColor,
               ),
             ),
           ],
@@ -658,36 +713,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _showProfileOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                _editProfile();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.share),
-              title: const Text('Share Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareProfile();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showUpgradeModal() {
     Navigator.push(
       context,
@@ -751,12 +776,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         }
       }
     }
-  }
-
-  void _shareProfile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Share Profile - Coming Soon!')),
-    );
   }
 
   void _openAccountSettings() {
