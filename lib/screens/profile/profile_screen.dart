@@ -35,22 +35,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _loadUserProfile() async {
-    try {
-      final authService = context.read<AuthService>();
-      final firestoreService = FirestoreService();
-      
-      if (authService.userId != null) {
-        final userData = await firestoreService.getUserData(authService.userId!);
-        if (userData != null && mounted) {
-          setState(() {
-            _username = userData['username'] ?? 'John Doe';
-            _country = userData['country'] ?? 'United States';
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error loading user profile: $e');
-    }
+    // Profile data will be loaded from Firestore in future update
+    // For now, using default values
+    setState(() {
+      _username = 'Food Lover';
+      _country = 'United States';
+    });
   }
 
   @override

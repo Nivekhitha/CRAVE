@@ -804,10 +804,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
       ),
     );
   }
-
-  Future<void> _handleRefresh() async {
-    await _loadRecipes();
-  }
 }
 
 class _TrendingRecipe {
