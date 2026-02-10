@@ -574,20 +574,62 @@ class _ProfileScreenState extends State<ProfileScreen>
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
+    // Use different red shades for variety
+    Color iconBgColor;
+    Color iconColor;
+    
+    if (isDestructive) {
+      iconBgColor = const Color(0xFFFFEBEE); // Light red background
+      iconColor = const Color(0xFFD32F2F); // Bright red icon
+    } else {
+      // Rotate through red/terracotta shades based on icon
+      switch (icon) {
+        case Icons.person:
+          iconBgColor = const Color(0xFFFFE8E3); // Light terracotta
+          iconColor = const Color(0xFFD4654A); // Terracotta
+          break;
+        case Icons.notifications:
+          iconBgColor = const Color(0xFFFFE0E0); // Light coral
+          iconColor = const Color(0xFFE57373); // Coral red
+          break;
+        case Icons.security:
+          iconBgColor = const Color(0xFFFFEBEE); // Light pink-red
+          iconColor = const Color(0xFFEF5350); // Bright red
+          break;
+        case Icons.download:
+          iconBgColor = const Color(0xFFFFF3E0); // Light orange-red
+          iconColor = const Color(0xFFFF7043); // Deep orange
+          break;
+        case Icons.help:
+          iconBgColor = const Color(0xFFFFE8E3); // Light terracotta
+          iconColor = const Color(0xFFD4654A); // Terracotta
+          break;
+        case Icons.feedback:
+          iconBgColor = const Color(0xFFFFE0E0); // Light coral
+          iconColor = const Color(0xFFE57373); // Coral red
+          break;
+        case Icons.info:
+          iconBgColor = const Color(0xFFFFEBEE); // Light pink-red
+          iconColor = const Color(0xFFEF5350); // Bright red
+          break;
+        default:
+          iconBgColor = const Color(0xFFFFE8E3); // Default terracotta
+          iconColor = const Color(0xFFD4654A);
+      }
+    }
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isDestructive 
-                ? Colors.red.withOpacity(0.1) 
-                : AppColors.primary.withOpacity(0.1),
+            color: iconBgColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: isDestructive ? Colors.red : AppColors.primary,
+            color: iconColor,
             size: 20,
           ),
         ),
@@ -595,18 +637,18 @@ class _ProfileScreenState extends State<ProfileScreen>
           title,
           style: AppTextStyles.titleSmall.copyWith(
             fontWeight: FontWeight.w500,
-            color: isDestructive ? Colors.red : null,
+            color: isDestructive ? Colors.red : Theme.of(context).colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         trailing: Icon(
           Icons.chevron_right,
-          color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         onTap: onTap,
         shape: RoundedRectangleBorder(

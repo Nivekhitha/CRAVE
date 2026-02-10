@@ -127,6 +127,32 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    // Use different red shades for variety
+    Color iconBgColor;
+    Color iconColor;
+    
+    switch (icon) {
+      case Icons.alarm:
+        iconBgColor = const Color(0xFFFFE8E3); // Light terracotta
+        iconColor = const Color(0xFFD4654A); // Terracotta
+        break;
+      case Icons.calendar_today:
+        iconBgColor = const Color(0xFFFFE0E0); // Light coral
+        iconColor = const Color(0xFFE57373); // Coral red
+        break;
+      case Icons.lightbulb:
+        iconBgColor = const Color(0xFFFFEBEE); // Light pink-red
+        iconColor = const Color(0xFFEF5350); // Bright red
+        break;
+      case Icons.star:
+        iconBgColor = const Color(0xFFFFF3E0); // Light orange-red
+        iconColor = const Color(0xFFFF7043); // Deep orange
+        break;
+      default:
+        iconBgColor = const Color(0xFFFFE8E3);
+        iconColor = const Color(0xFFD4654A);
+    }
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -137,12 +163,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         secondary: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: iconBgColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: AppColors.primary,
+            color: iconColor,
             size: 20,
           ),
         ),

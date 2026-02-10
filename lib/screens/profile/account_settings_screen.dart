@@ -82,20 +82,42 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
+    // Use red shades for icon backgrounds
+    Color iconBgColor;
+    Color iconColor;
+    
+    if (isDestructive) {
+      iconBgColor = const Color(0xFFFFEBEE); // Light red background
+      iconColor = const Color(0xFFD32F2F); // Bright red icon
+    } else {
+      // Use terracotta/red shades
+      switch (icon) {
+        case Icons.email:
+          iconBgColor = const Color(0xFFFFE8E3); // Light terracotta
+          iconColor = const Color(0xFFD4654A); // Terracotta
+          break;
+        case Icons.lock:
+          iconBgColor = const Color(0xFFFFE0E0); // Light coral
+          iconColor = const Color(0xFFE57373); // Coral red
+          break;
+        default:
+          iconBgColor = const Color(0xFFFFE8E3);
+          iconColor = const Color(0xFFD4654A);
+      }
+    }
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isDestructive 
-                ? Colors.red.withOpacity(0.1) 
-                : AppColors.primary.withOpacity(0.1),
+            color: iconBgColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: isDestructive ? Colors.red : AppColors.primary,
+            color: iconColor,
             size: 20,
           ),
         ),
