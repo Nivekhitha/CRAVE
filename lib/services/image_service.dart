@@ -116,8 +116,11 @@ class ImageService {
         return cachedUrl;
       }
 
-      // Use Unsplash as the AI generation backend
-      final generatedUrl = await UnsplashImageService().getRecipeImage(recipe.title);
+      // Use Unsplash with enhanced search (pass tags for better results)
+      final generatedUrl = await UnsplashImageService().getRecipeImage(
+        recipe.title,
+        tags: recipe.tags,
+      );
       
       if (generatedUrl.isNotEmpty) {
         await _cacheImageUrl(cacheKey, generatedUrl);

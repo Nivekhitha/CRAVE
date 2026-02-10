@@ -23,11 +23,12 @@ class UnsplashImageService {
     'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=800', // Food 4 (Breakfast)
   ];
 
-  Future<String> getRecipeImage(String recipeName) async {
+  Future<String> getRecipeImage(String recipeName, {List<String>? tags}) async {
     // Check cache first
-    if (_imageCache.containsKey(recipeName)) {
+    final cacheKey = '$recipeName${tags?.join('')}';
+    if (_imageCache.containsKey(cacheKey)) {
       debugPrint('📸 Unsplash Cache Hit: $recipeName');
-      return _imageCache[recipeName]!;
+      return _imageCache[cacheKey]!;
     }
 
     try {
@@ -37,38 +38,68 @@ class UnsplashImageService {
         return _getFallbackImage();
       }
 
-      // Extract main ingredient/dish type for better search
-      final searchTerm = _extractSearchTerm(recipeName);
-      debugPrint('🔍 Unsplash Search: "$recipeName" -> "$searchTerm"');
+      // Try multiple search strategies for best results
+      String? imageUrl;
       
-      final response = await http.get(
-        Uri.parse('$_baseUrl/search/photos?query=$searchTerm food&orientation=landscape&per_page=1'),
-        headers: {
-          'Authorization': 'Client-ID $accessKey',
-          'Accept-Version': 'v1',
-        },
-      ).timeout(const Duration(seconds: 5)); // 5s timeout
-      
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['results'] != null && (data['results'] as List).isNotEmpty) {
-          final imageUrl = data['results'][0]['urls']['regular']; // High quality URL
-          
-          // Cache the result
-          _imageCache[recipeName] = imageUrl;
-          return imageUrl;
-        } else {
-          debugPrint('⚠️ Unsplash returned no results for: $searchTerm');
-        }
-      } else {
-        debugPrint('⚠️ Unsplash API Error: ${response.statusCode} - ${response.body}');
+      // Strategy 1: Recipe name + main tag + "food"
+      if (imageUrl == null && tags != null && tags.isNotEmpty) {
+        final mainTag = tags.first;
+        imageUrl = await _searchUnsplash('$recipeName $mainTag food', accessKey);
       }
       
-      // Fallback if no results or error
+      // Strategy 2: Just recipe name + "food"
+      if (imageUrl == null) {
+        final searchTerm = _extractSearchTerm(recipeName);
+        imageUrl = await _searchUnsplash('$searchTerm food', accessKey);
+      }
+      
+      // Strategy 3: Generic food category from tags
+      if (imageUrl == null && tags != null && tags.isNotEmpty) {
+        imageUrl = await _searchUnsplash('${tags.first} food dish', accessKey);
+      }
+      
+      // Cache and return if found
+      if (imageUrl != null) {
+        _imageCache[cacheKey] = imageUrl;
+        return imageUrl;
+      }
+      
+      // Fallback if all strategies fail
+      debugPrint('⚠️ All Unsplash search strategies failed for: $recipeName');
       return _getFallbackImage();
     } catch (e) {
       debugPrint('❌ Unsplash Exception: $e');
       return _getFallbackImage();
+    }
+  }
+  
+  Future<String?> _searchUnsplash(String query, String accessKey) async {
+    try {
+      debugPrint('🔍 Unsplash Search: "$query"');
+      
+      final response = await http.get(
+        Uri.parse('$_baseUrl/search/photos?query=${Uri.encodeComponent(query)}&orientation=landscape&per_page=1'),
+        headers: {
+          'Authorization': 'Client-ID $accessKey',
+          'Accept-Version': 'v1',
+        },
+      ).timeout(const Duration(seconds: 5));
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['results'] != null && (data['results'] as List).isNotEmpty) {
+          final imageUrl = data['results'][0]['urls']['regular'];
+          debugPrint('✅ Found image for: $query');
+          return imageUrl;
+        }
+      } else if (response.statusCode == 403) {
+        debugPrint('⚠️ Unsplash API rate limit exceeded');
+      }
+      
+      return null;
+    } catch (e) {
+      debugPrint('⚠️ Unsplash search failed for "$query": $e');
+      return null;
     }
   }
   
