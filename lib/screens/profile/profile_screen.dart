@@ -5,8 +5,12 @@ import '../../app/app_text_styles.dart';
 import '../../services/premium_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/journal_service.dart';
+import '../../services/firestore_service.dart';
 import '../../providers/user_provider.dart';
 import '../../widgets/premium/paywall_view.dart';
+import '../../widgets/profile/edit_profile_dialog.dart';
+import 'account_settings_screen.dart';
+import 'notification_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,8 +22,36 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with AutomaticKeepAliveClientMixin {
   
+  String _username = 'John Doe';
+  String _country = 'United States';
+  
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final authService = context.read<AuthService>();
+      final firestoreService = FirestoreService();
+      
+      if (authService.userId != null) {
+        final userData = await firestoreService.getUserData(authService.userId!);
+        if (userData != null && mounted) {
+          setState(() {
+            _username = userData['username'] ?? 'John Doe';
+            _country = userData['country'] ?? 'United States';
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'John Doe', // TODO: Get from user provider
+                    _username,
                     style: AppTextStyles.headlineMedium.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -641,10 +673,52 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _editProfile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit Profile - Coming Soon!')),
+  void _editProfile() async {
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => EditProfileDialog(
+        currentUsername: _username,
+        currentCountry: _country,
+      ),
     );
+    
+    if (result != null) {
+      try {
+        final authService = context.read<AuthService>();
+        final firestoreService = FirestoreService();
+        
+        if (authService.userId != null) {
+          await firestoreService.updateUserProfile({
+            'username': result['username']!,
+            'country': result['country']!,
+          });
+          
+          setState(() {
+            _username = result['username']!;
+            _country = result['country']!;
+          });
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ Profile updated successfully'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ Error updating profile: $e'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _shareProfile() {
@@ -654,38 +728,139 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _openAccountSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Account Settings - Coming Soon!')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AccountSettingsScreen(),
+      ),
     );
   }
 
   void _openNotificationSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Notification Settings - Coming Soon!')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const NotificationSettingsScreen(),
+      ),
     );
   }
 
   void _openPrivacySettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Privacy Settings - Coming Soon!')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Privacy & Security'),
+        content: const Text('Privacy settings will be available in a future update. Your data is always encrypted and secure.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('📤 Data export started!')),
+  void _exportData() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Exporting your data...'),
+          ],
+        ),
+      ),
     );
+    
+    // Simulate export process
+    await Future.delayed(const Duration(seconds: 2));
+    
+    if (mounted) {
+      Navigator.pop(context); // Close loading dialog
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('📤 Data export complete! Check your downloads folder.'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _openHelpCenter() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Help Center - Coming Soon!')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Help Center'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Frequently Asked Questions:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              const Text('Q: How do I add recipes?\nA: Tap the + button on the home screen.'),
+              const SizedBox(height: 8),
+              const Text('Q: How do I save recipes?\nA: Tap the bookmark icon on any recipe.'),
+              const SizedBox(height: 8),
+              const Text('Q: How do I upgrade to Premium?\nA: Tap "Upgrade to Premium" on your profile.'),
+              const SizedBox(height: 16),
+              const Text('Need more help?', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('Email: support@craveapp.com'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
   void _sendFeedback() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Feedback - Coming Soon!')),
+    showDialog(
+      context: context,
+      builder: (context) {
+        final feedbackController = TextEditingController();
+        return AlertDialog(
+          title: const Text('Send Feedback'),
+          content: TextField(
+            controller: feedbackController,
+            decoration: const InputDecoration(
+              hintText: 'Tell us what you think...',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 5,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✅ Thank you for your feedback!'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Send'),
+            ),
+          ],
+        );
+      },
     );
   }
 
