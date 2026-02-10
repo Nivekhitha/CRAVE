@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../app/app_colors.dart';
 import '../../app/app_text_styles.dart';
 import '../../providers/user_provider.dart';
@@ -20,6 +21,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'All';
+  String _searchQuery = '';
+  List<Recipe> _allRecipes = [];
+  List<Recipe> _filteredRecipes = [];
+  bool _isLoading = true;
   
   final List<String> _filters = [
     'All',
@@ -33,6 +38,75 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipes();
+  }
+
+  Future<void> _loadRecipes() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Load recipes from Firestore
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final snapshot = await FirebaseFirestore.instance
+          .collection('recipes')
+          .limit(100)
+          .get();
+      
+      _allRecipes = snapshot.docs.map((doc) {
+        return Recipe.fromMap(doc.data(), doc.id);
+      }).toList();
+      
+      _applyFilters();
+    } catch (e) {
+      debugPrint('❌ Error loading recipes: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _applyFilters() {
+    List<Recipe> filtered = List.from(_allRecipes);
+    
+    // Apply search query
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((recipe) {
+        final query = _searchQuery.toLowerCase();
+        return recipe.title.toLowerCase().contains(query) ||
+               recipe.ingredients.any((i) => i.toLowerCase().contains(query)) ||
+               (recipe.tags?.any((t) => t.toLowerCase().contains(query)) ?? false);
+      }).toList();
+    }
+    
+    // Apply filter
+    if (_selectedFilter != 'All' && _selectedFilter != 'Saved') {
+      filtered = filtered.where((recipe) {
+        switch (_selectedFilter) {
+          case 'Quick & Easy':
+            return (recipe.cookTime != null && recipe.cookTime! < 30) ||
+                   (recipe.tags?.contains('Quick & Easy') ?? false);
+          case 'Healthy':
+            return (recipe.calories != null && recipe.calories! < 500) ||
+                   (recipe.tags?.contains('Healthy') ?? false);
+          case 'Comfort Food':
+            return recipe.tags?.contains('Comfort Food') ?? false;
+          case 'Vegetarian':
+            return recipe.tags?.contains('Vegetarian') ?? false;
+          case 'Dessert':
+            return recipe.tags?.contains('Dessert') ?? false;
+          default:
+            return true;
+        }
+      }).toList();
+    }
+    
+    setState(() {
+      _filteredRecipes = filtered;
+    });
+  }
 
   @override
   void dispose() {
@@ -322,134 +396,204 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               );
             }
             
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Saved Recipes (${savedRecipes.length})',
-                    style: AppTextStyles.titleLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ...savedRecipes.map((recipe) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => RecipeDetailScreen(recipe: recipe),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 5,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: recipe.imageUrl != null
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.network(
-                                        recipe.imageUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => const Icon(
-                                          Icons.restaurant_menu,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.restaurant_menu,
-                                      color: AppColors.primary,
-                                    ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    recipe.title,
-                                    style: AppTextStyles.titleSmall.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      if (recipe.cookTime != null) ...[
-                                        const Icon(Icons.access_time,
-                                            size: 14, color: AppColors.textSecondary),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${recipe.cookTime} min',
-                                          style: AppTextStyles.bodySmall.copyWith(
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                      ],
-                                      if (recipe.difficulty != null) ...[
-                                        const Icon(Icons.signal_cellular_alt,
-                                            size: 14, color: AppColors.textSecondary),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          recipe.difficulty!,
-                                          style: AppTextStyles.bodySmall.copyWith(
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.bookmark,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ],
-              ),
-            );
+            return _buildRecipeList(savedRecipes, 'Saved Recipes');
           }
           
-          // Show regular suggestions for other filters
+          // Show search/filter results
+          if (_searchQuery.isNotEmpty || _selectedFilter != 'All') {
+            if (_isLoading) {
+              return const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            
+            if (_filteredRecipes.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.search_off,
+                        size: 48,
+                        color: AppColors.textSecondary.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No Recipes Found',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Try adjusting your search or filters',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            
+            return _buildRecipeList(_filteredRecipes, 
+              _searchQuery.isNotEmpty 
+                ? 'Search Results (${_filteredRecipes.length})'
+                : '$_selectedFilter (${_filteredRecipes.length})');
+          }
+          
+          // Show regular suggestions for "All" filter with no search
           return RecipeSuggestionsWidget(
             showHeader: true,
             maxSuggestions: 10,
-            filterMealType: _selectedFilter == 'All' ? null : _selectedFilter,
+            filterMealType: null,
           );
         },
       ),
     );
+  }
+  
+  Widget _buildRecipeList(List<Recipe> recipes, String title) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppTextStyles.titleLarge.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...recipes.map((recipe) {
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RecipeDetailScreen(recipe: recipe),
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: recipe.imageUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                recipe.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.restaurant_menu,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.restaurant_menu,
+                              color: AppColors.primary,
+                            ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            recipe.title,
+                            style: AppTextStyles.titleSmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              if (recipe.cookTime != null) ...[
+                                Icon(Icons.access_time,
+                                    size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${recipe.cookTime} min',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                              ],
+                              if (recipe.difficulty != null) ...[
+                                Icon(Icons.signal_cellular_alt,
+                                    size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 4),
+                                Text(
+                                  recipe.difficulty!,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Consumer<UserProvider>(
+                      builder: (context, userProvider, _) {
+                        final isSaved = userProvider.savedRecipeIds.contains(recipe.id);
+                        return Icon(
+                          isSaved ? Icons.bookmark : Icons.bookmark_border,
+                          color: isSaved ? AppColors.primary : AppColors.textSecondary,
+                          size: 20,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleRefresh() async {
+    await _loadRecipes();
   }
 
   Widget _buildTrendingSection() {
@@ -556,20 +700,22 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   void _handleSearch(String query) {
-    // TODO: Implement search functionality
-    debugPrint('Searching for: $query');
+    setState(() {
+      _searchQuery = query;
+    });
+    _applyFilters();
   }
 
   void _handleSearchSubmit(String query) {
-    // TODO: Navigate to search results
-    debugPrint('Search submitted: $query');
+    // Search is already applied in real-time via _handleSearch
+    FocusScope.of(context).unfocus(); // Hide keyboard
   }
 
   void _handleFilterSelected(String filter) {
     setState(() {
       _selectedFilter = filter;
     });
-    // TODO: Filter recipes based on selection
+    _applyFilters();
   }
 
   void _navigateToTrendingRecipe(String title) {
@@ -660,8 +806,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
   }
 
   Future<void> _handleRefresh() async {
-    // TODO: Refresh discovery content
-    await Future.delayed(const Duration(seconds: 1));
+    await _loadRecipes();
   }
 }
 
