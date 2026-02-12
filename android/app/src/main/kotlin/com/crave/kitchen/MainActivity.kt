@@ -1,4 +1,4 @@
-package com.example.crave
+package com.crave.kitchen
 
 import io.flutter.embedding.android.FlutterActivity
 

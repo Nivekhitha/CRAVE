@@ -58,10 +58,10 @@ class _SignupScreenState extends State<SignupScreen> {
           email: _emailController.text.trim(),
         );
 
-        // Success - navigation will be handled by auth state stream
+        // Navigate to onboarding for new users
         if (mounted) {
           Navigator.of(context)
-              .pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
+              .pushNamedAndRemoveUntil(AppRoutes.onboardingDietary, (route) => false);
         }
       } else {
         // Show error

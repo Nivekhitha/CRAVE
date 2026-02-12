@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
+import '../screens/onboarding/welcome_screen.dart';
+import '../screens/onboarding/dietary_preferences_screen.dart';
+import '../screens/onboarding/purpose_screen.dart';
+import '../screens/onboarding/avoid_ingredients_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
@@ -27,6 +31,10 @@ class AppRoutes {
   // Core navigation
   static const String splash = '/';
   static const String onboarding = '/onboarding';
+  static const String onboardingWelcome = '/onboarding/welcome';
+  static const String onboardingDietary = '/onboarding/dietary';
+  static const String onboardingPurpose = '/onboarding/purpose';
+  static const String onboardingAvoid = '/onboarding/avoid';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
@@ -59,6 +67,26 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       case onboarding:
         return MaterialPageRoute(builder: (_) => const OnboardingScreen());
+      case onboardingWelcome:
+        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+      case onboardingDietary:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => const DietaryPreferencesScreen(),
+          settings: RouteSettings(arguments: args),
+        );
+      case onboardingPurpose:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => const PurposeScreen(),
+          settings: RouteSettings(arguments: args),
+        );
+      case onboardingAvoid:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => const AvoidIngredientsScreen(),
+          settings: RouteSettings(arguments: args),
+        );
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case signup:

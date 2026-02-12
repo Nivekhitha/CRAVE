@@ -497,7 +497,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: const Color(0xFFC0392B).withOpacity(0.08),
                       blurRadius: 5,
                       offset: const Offset(0, 2),
                     ),
@@ -640,7 +640,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: const Color(0xFFC0392B).withOpacity(0.08),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),

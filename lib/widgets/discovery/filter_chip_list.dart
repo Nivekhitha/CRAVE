@@ -32,15 +32,15 @@ class FilterChipList extends StatelessWidget {
               label: Text(filter),
               selected: isSelected,
               onSelected: (_) => onFilterSelected(filter),
-              backgroundColor: AppColors.surface,
+              backgroundColor: Colors.white, // White background for unselected
               selectedColor: AppColors.primary.withOpacity(0.1),
               checkmarkColor: AppColors.primary,
               labelStyle: AppTextStyles.labelMedium.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? AppColors.primary : const Color(0xFF3D351B), // Dark text
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
               side: BorderSide(
-                color: isSelected ? AppColors.primary : Colors.transparent,
+                color: isSelected ? AppColors.primary : Colors.grey[300]!, // Light border
                 width: 1,
               ),
               shape: RoundedRectangleBorder(

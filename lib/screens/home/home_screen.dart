@@ -111,7 +111,7 @@ class _HomeView extends StatelessWidget {
                 journalCount: userProvider.recipesCooked,
                 onPantryTap: () => Navigator.pushNamed(context, '/pantry'),
                 onGroceryTap: () => Navigator.pushNamed(context, '/grocery'),
-                onPlannerTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MealPlanningGate(child: MealPlanningScreen()))), // Assuming route or direct
+                onPlannerTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MealPlanningScreen())),
                 onJournalTap: () => Navigator.pushNamed(context, '/journal'),
               ),
             ),

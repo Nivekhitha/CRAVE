@@ -13,14 +13,18 @@ class AddRecipeOptionsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Add Recipe'),
+        title: Text(
+          'Add Recipe',
+          style: AppTextStyles.titleLarge.copyWith(
+            color: const Color(0xFF3D351B), // Dark brown text
+          ),
+        ),
         backgroundColor: AppColors.background,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.titleLarge,
         leading: Navigator.canPop(context) 
           ? IconButton(
-              icon: const Icon(Icons.close, color: AppColors.textPrimary),
+              icon: const Icon(Icons.close, color: Color(0xFFC0392B)), // Red close icon
               onPressed: () => Navigator.pop(context),
             )
           : null,
@@ -31,7 +35,9 @@ class AddRecipeOptionsScreen extends StatelessWidget {
           children: [
             Text(
               'How would you like to add your recipe?',
-              style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.titleMedium.copyWith(
+                color: const Color(0xFF6B6B6B), // Gray text
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -116,7 +122,7 @@ class _OptionCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: const Color(0xFFC0392B).withOpacity(0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -129,13 +135,29 @@ class _OptionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: AppTextStyles.titleMedium.copyWith(fontSize: 18)),
+                    Text(
+                      title,
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontSize: 18,
+                        color: const Color(0xFF3D351B), // Dark brown text
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text(subtitle, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: const Color(0xFF6B6B6B), // Gray text
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF6B6B6B), // Gray arrow
+                size: 16,
+              ),
             ],
           ),
         ),

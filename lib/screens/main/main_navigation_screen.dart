@@ -115,7 +115,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: const Color(0xFFC0392B).withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -216,7 +216,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       scale: _fabScaleAnimation,
       child: FloatingActionButton(
         onPressed: _showAddModal,
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFFFF7043), // Deep orange color (different from primary red)
         foregroundColor: Colors.white,
         elevation: 8,
         child: const Icon(Icons.add, size: 28),
@@ -400,6 +400,7 @@ class _AddActionModal extends StatelessWidget {
               title,
               style: AppTextStyles.titleSmall.copyWith(
                 fontWeight: FontWeight.w600,
+                color: const Color(0xFF3D351B), // Dark brown text
               ),
               textAlign: TextAlign.center,
             ),
@@ -407,7 +408,7 @@ class _AddActionModal extends StatelessWidget {
             Text(
               subtitle,
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: const Color(0xFF6B6B6B), // Gray text
               ),
               textAlign: TextAlign.center,
             ),

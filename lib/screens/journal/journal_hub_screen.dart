@@ -515,7 +515,7 @@ class _JournalHubScreenState extends State<JournalHubScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: const Color(0xFFC0392B).withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

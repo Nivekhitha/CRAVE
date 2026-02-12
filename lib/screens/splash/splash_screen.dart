@@ -122,8 +122,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       // User is logged in, go to main navigation
       Navigator.of(context).pushReplacementNamed(AppRoutes.main);
     } else {
-      // User not logged in, go to onboarding
-      Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
+      // User not logged in, go to new welcome screen
+      Navigator.of(context).pushReplacementNamed(AppRoutes.onboardingWelcome);
     }
   }
 

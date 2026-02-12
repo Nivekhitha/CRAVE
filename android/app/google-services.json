@@ -7,30 +7,23 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:576535901550:android:c1ba023af17bd8c6663d7f",
+        "mobilesdk_app_id": "1:576535901550:android:c8aed5a56f7eece3663d7f",
         "android_client_info": {
-          "package_name": "com.example.crave"
+          "package_name": "com.crave.kitchen"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "576535901550-example.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
+        {
+          "current_key": "AIzaSyD-BsMhnGIXxH-rF8krz-nVQda_cKQ5UXo"
+        },
         {
           "current_key": "AIzaSyBgQvazi7jLl2OIdNIGWAEebkI89mf-kCE"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "576535901550-example.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

@@ -32,7 +32,9 @@ class PremiumGate extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
+                  CircularProgressIndicator(
+                    color: const Color(0xFFC0392B),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Loading...',
